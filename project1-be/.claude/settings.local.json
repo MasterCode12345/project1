@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(go build *)",
+      "Bash(python3 -c \"import json,sys; data=json.load\\(sys.stdin\\); print\\(data[0]['text']\\)\")",
+      "WebFetch(domain:cellphones.com.vn)",
+      "WebFetch(domain:api.cellphones.com.vn)",
+      "mcp__Claude_in_Chrome__tabs_context_mcp",
+      "Bash(curl -s -X POST https://api.cellphones.com.vn/v2/graphql/query -H 'Content-Type: application/json' -H 'User-Agent: Mozilla/5.0 \\(Macintosh; Intel Mac OS X 10_15_7\\) AppleWebKit/537.36' -d '{\"query\":\"{ products\\(filter:{category_id:{eq:\\\\\"3\\\\\"}}, currentPage:1, pageSize:2\\) { items { _id name sku price special_price slug thumbnail } page_info { total_pages current_page } } }\"}')",
+      "Bash(curl -s -X POST https://api.cellphones.com.vn/v2/graphql/query -H 'Content-Type: application/json' -H 'User-Agent: Mozilla/5.0' -d '{\"query\":\"{ __schema { queryType { fields { name args { name type { name kind ofType { name } } } } } } }\"}')",
+      "Bash(python3 -m json.tool)",
+      "Bash(curl -s -X POST https://api.cellphones.com.vn/v2/graphql/query -H 'Content-Type: application/json' -H 'User-Agent: Mozilla/5.0' -d '{\"query\":\"{ products\\(page:1, size:2\\) { _id name sku price special_price slug thumbnail } }\"}')",
+      "Bash(curl -s -X POST https://api.cellphones.com.vn/v2/graphql/query -H 'Content-Type: application/json' -H 'User-Agent: Mozilla/5.0' -d '{\"query\":\"{ __type\\(name:\\\\\"Product\\\\\"\\) { fields { name type { name kind } } } }\"}')",
+      "Bash(curl -s -X POST https://api.cellphones.com.vn/v2/graphql/query -H 'Content-Type: application/json' -H 'User-Agent: Mozilla/5.0' -d '{\"query\":\"{ products\\(page:1, size:1, filter:{}\\) { id } }\"}')",
+      "Bash(curl -s -X POST https://api.cellphones.com.vn/v2/graphql/query -H 'Content-Type: application/json' -H 'User-Agent: Mozilla/5.0' -d '{\"query\":\"{ products\\(page:1, size:1, filter:{__TRACKED_VAR__: 3}\\) { __typename } }\"}')",
+      "Bash(curl -s -X POST https://api.cellphones.com.vn/v2/graphql/query -H 'Content-Type: application/json' -H 'User-Agent: Mozilla/5.0' -d '{\"query\":\"{ products\\(page:1, size:1, filter:{xxx: 3}\\) { __typename } }\"}')",
+      "Bash(curl -s 'https://api.cellphones.com.vn/v2/products?category=3&page=1&size=2' -H 'User-Agent: Mozilla/5.0')",
+      "Bash(curl -s \"https://cellphones.com.vn/mobile.html\" -H \"User-Agent: Mozilla/5.0\")",
+      "Bash(curl -s 'https://cellphones.com.vn/catalogsearch/result/?q=iphone&p=1' -H 'User-Agent: Mozilla/5.0' -H 'Accept: application/json')",
+      "Bash(curl -s 'https://api.cellphones.com.vn/v1/product/list?category=3&page=1&limit=2' -H 'User-Agent: Mozilla/5.0')",
+      "Bash(curl -s \"https://cellphones.com.vn/\" -H \"User-Agent: Mozilla/5.0\")",
+      "Bash(curl -s \"https://cellphones.com.vn/_payload.json\" -H \"User-Agent: Mozilla/5.0\")",
+      "Bash(curl -s \"https://cellphones.com.vn/__nuxt_island/\" -H \"User-Agent: Mozilla/5.0\")",
+      "Bash(curl -s \"https://cellphones.com.vn/iphone-16-pro-max.html\" -H \"User-Agent: Mozilla/5.0\")"
+    ]
+  }
+}
