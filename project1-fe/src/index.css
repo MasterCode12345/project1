@@ -806,6 +806,72 @@ textarea:focus {
   gap: 16px;
 }
 
+/* Profile page */
+.profile-forms-col {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.profile-section {
+  border: 1px solid var(--outline);
+  border-radius: 16px;
+  background: var(--surface-card);
+  box-shadow: var(--shadow-soft);
+  padding: 28px;
+}
+
+.profile-section h2 {
+  margin-bottom: 20px;
+  font-size: 1.1rem;
+}
+
+.profile-info-card {
+  margin-top: 24px;
+  border: 1px solid var(--outline);
+  border-radius: 14px;
+  background: var(--surface-card);
+  box-shadow: var(--shadow-soft);
+  padding: 20px 22px;
+  display: grid;
+  gap: 14px;
+}
+
+.profile-info-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.profile-info-label {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.profile-info-value {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.profile-role-badge {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--primary-soft);
+  color: var(--primary-dark);
+  font-size: 0.8rem;
+}
+
+.profile-status--active {
+  color: var(--primary-dark);
+}
+
+.profile-status--inactive {
+  color: var(--danger);
+}
+
 .empty-state {
   margin-top: 28px;
   padding: 44px;
