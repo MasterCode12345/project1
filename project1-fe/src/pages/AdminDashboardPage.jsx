@@ -1,6 +1,6 @@
 import { AlertTriangle, Boxes, ShoppingBag, TrendingUp } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import Button from '../components/common/Button.jsx';
 import { apiRequest, getAuthToken } from '../services/apiClient.js';
 
@@ -114,6 +114,11 @@ export default function AdminDashboardPage() {
             </Button>
           </div>
         )}
+
+        {/* Quick links */}
+        <div className="admin-quick-links">
+          <Link className="admin-quick-link" to="/admin/orders">Quản lý đơn hàng →</Link>
+        </div>
 
         {/* Stat cards */}
         {!error && (
