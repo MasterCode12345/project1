@@ -1151,6 +1151,71 @@ textarea:focus {
   pointer-events: none;
 }
 
+/* Admin quick links */
+.admin-quick-links {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.admin-quick-link {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--primary-dark);
+  text-decoration: none;
+}
+
+.admin-quick-link:hover {
+  text-decoration: underline;
+}
+
+/* Admin order shipping info */
+.order-shipping-info {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 22px;
+  font-size: 0.87rem;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--outline);
+}
+
+.order-shipping-sep {
+  color: var(--outline-strong);
+}
+
+.order-shipping-address {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Admin status update inline */
+.admin-status-update {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-status-select {
+  padding: 9px 12px;
+  border: 1px solid var(--outline-strong, #cbd5e1);
+  border-radius: 8px;
+  background: var(--surface-card);
+  color: var(--text);
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.admin-status-select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .site-footer {
   margin-top: 48px;
   padding: 44px 0;

@@ -25,4 +25,11 @@ export const orderService = {
   getAdminOrders(params = {}) {
     return apiRequest(`/admin/orders${buildQuery(params)}`);
   },
+
+  adminUpdateStatus(id, status) {
+    return apiRequest(`/admin/orders/${id}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    });
+  },
 };
