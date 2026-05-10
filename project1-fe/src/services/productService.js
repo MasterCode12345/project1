@@ -62,6 +62,11 @@ export const productService = {
     return apiRequest(`/admin/products${buildQuery(params)}`);
   },
 
+  async getAdminProductById(id) {
+    const response = await apiRequest(`/admin/products/${id}`);
+    return normalizeProduct(response);
+  },
+
   createProduct(payload) {
     return apiRequest('/admin/products', {
       method: 'POST',
@@ -73,6 +78,17 @@ export const productService = {
     return apiRequest(`/admin/products/${id}`, {
       method: 'PUT',
       body: JSON.stringify(payload),
+    });
+  },
+
+  deleteProduct(id) {
+    return apiRequest(`/admin/products/${id}`, { method: 'DELETE' });
+  },
+
+  updateVisibility(id, isVisible) {
+    return apiRequest(`/admin/products/${id}/visibility`, {
+      method: 'PATCH',
+      body: JSON.stringify({ is_visible: isVisible }),
     });
   },
 };

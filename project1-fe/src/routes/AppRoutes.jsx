@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import MainLayout from '../components/layout/MainLayout.jsx';
 import AdminDashboardPage from '../pages/AdminDashboardPage.jsx';
 import AdminOrdersPage from '../pages/AdminOrdersPage.jsx';
+import AdminProductsPage from '../pages/AdminProductsPage.jsx';
 import CartPage from '../pages/CartPage.jsx';
 import HomePage from '../pages/HomePage.jsx';
 import LoginPage from '../pages/LoginPage.jsx';
@@ -25,6 +26,7 @@ export default function AppRoutes() {
         <Route path="orders" element={<MyOrdersPage />} />
         <Route path="admin" element={<AdminDashboardPage />} />
         <Route path="admin/orders" element={<AdminOrdersPage />} />
+        <Route path="admin/products" element={<AdminProductsPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
