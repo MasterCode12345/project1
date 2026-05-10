@@ -45,6 +45,10 @@ export const cartService = {
     return Promise.resolve(writeCart(nextItems.filter((item) => item.quantity > 0)));
   },
 
+  removeItem(productId) {
+    return Promise.resolve(writeCart(readCart().filter((item) => item.product_id !== productId)));
+  },
+
   clearCart() {
     return Promise.resolve(writeCart([]));
   },
