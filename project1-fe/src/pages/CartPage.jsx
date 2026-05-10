@@ -36,6 +36,15 @@ export default function CartPage() {
   const [orderError, setOrderError] = useState('');
   const [orderSuccess, setOrderSuccess] = useState(false);
 
+  // Form thông tin giao hàng
+  const [shipping, setShipping] = useState({
+    shipping_name: '',
+    shipping_phone: '',
+    shipping_address: '',
+    shipping_note: '',
+  });
+  const [shippingErrors, setShippingErrors] = useState({});
+
   const isLoggedIn = Boolean(getAuthToken());
   const totalQty = items.reduce((sum, item) => sum + item.quantity, 0);
   const subtotal = items.reduce((sum, item) => sum + item.unit_price * item.quantity, 0);
@@ -57,9 +66,37 @@ export default function CartPage() {
     setItems(updated);
   }
 
+  function handleShippingChange(e) {
+    const { name, value } = e.target;
+    setShipping((prev) => ({ ...prev, [name]: value }));
+    if (shippingErrors[name]) {
+      setShippingErrors((prev) => ({ ...prev, [name]: '' }));
+    }
+  }
+
+  function validateShipping() {
+    const errors = {};
+    if (!shipping.shipping_name.trim() || shipping.shipping_name.trim().length < 2) {
+      errors.shipping_name = 'Họ tên tối thiểu 2 ký tự';
+    }
+    if (!shipping.shipping_phone.trim() || shipping.shipping_phone.trim().length < 8) {
+      errors.shipping_phone = 'Số điện thoại tối thiểu 8 ký tự';
+    }
+    if (!shipping.shipping_address.trim() || shipping.shipping_address.trim().length < 5) {
+      errors.shipping_address = 'Địa chỉ tối thiểu 5 ký tự';
+    }
+    return errors;
+  }
+
   async function handleCheckout() {
     if (!isLoggedIn) {
       navigate('/login');
+      return;
+    }
+
+    const errors = validateShipping();
+    if (Object.keys(errors).length > 0) {
+      setShippingErrors(errors);
       return;
     }
 
@@ -68,6 +105,10 @@ export default function CartPage() {
 
     try {
       await orderService.createOrder({
+        shipping_name: shipping.shipping_name.trim(),
+        shipping_phone: shipping.shipping_phone.trim(),
+        shipping_address: shipping.shipping_address.trim(),
+        shipping_note: shipping.shipping_note.trim(),
         items: items.map((item) => ({
           product_id: item.product_id,
           quantity: item.quantity,
@@ -131,64 +172,125 @@ export default function CartPage() {
 
         {/* Có sản phẩm */}
         {items.length > 0 && (
-          <div className="split-page">
-            {/* Danh sách sản phẩm */}
-            <div className="cart-list">
-              {items.map((item) => (
-                <div className="cart-item" key={item.product_id}>
-                  <div className="cart-item-image">
-                    {item.image_url ? (
-                      <img src={item.image_url} alt={item.product_name} />
-                    ) : (
-                      <span>{item.product_name.charAt(0)}</span>
-                    )}
-                  </div>
+          <div className="split-page cart-layout">
+            {/* Cột trái: sản phẩm + form giao hàng */}
+            <div>
+              {/* Danh sách sản phẩm */}
+              <div className="cart-list">
+                {items.map((item) => (
+                  <div className="cart-item" key={item.product_id}>
+                    <div className="cart-item-image">
+                      {item.image_url ? (
+                        <img src={item.image_url} alt={item.product_name} />
+                      ) : (
+                        <span>{item.product_name.charAt(0)}</span>
+                      )}
+                    </div>
 
-                  <div className="cart-item-info">
-                    <p className="cart-item-name">{item.product_name}</p>
-                    <strong className="cart-item-price">
-                      {currencyFormatter.format(item.unit_price)}
-                    </strong>
-                    <span className="cart-item-line-total">
-                      Thành tiền: {currencyFormatter.format(item.unit_price * item.quantity)}
-                    </span>
-                  </div>
+                    <div className="cart-item-info">
+                      <p className="cart-item-name">{item.product_name}</p>
+                      <strong className="cart-item-price">
+                        {currencyFormatter.format(item.unit_price)}
+                      </strong>
+                      <span className="cart-item-line-total">
+                        Thành tiền: {currencyFormatter.format(item.unit_price * item.quantity)}
+                      </span>
+                    </div>
 
-                  <div className="cart-item-controls">
-                    <div className="qty-row">
+                    <div className="cart-item-controls">
+                      <div className="qty-row">
+                        <button
+                          className="qty-btn"
+                          type="button"
+                          aria-label="Giảm số lượng"
+                          disabled={item.quantity <= 1}
+                          onClick={() => handleUpdateQuantity(item.product_id, item.quantity - 1)}
+                        >
+                          −
+                        </button>
+                        <span className="qty-value">{item.quantity}</span>
+                        <button
+                          className="qty-btn"
+                          type="button"
+                          aria-label="Tăng số lượng"
+                          onClick={() => handleUpdateQuantity(item.product_id, item.quantity + 1)}
+                        >
+                          +
+                        </button>
+                      </div>
                       <button
-                        className="qty-btn"
+                        className="cart-remove-btn"
                         type="button"
-                        aria-label="Giảm số lượng"
-                        disabled={item.quantity <= 1}
-                        onClick={() => handleUpdateQuantity(item.product_id, item.quantity - 1)}
+                        aria-label="Xóa sản phẩm"
+                        onClick={() => handleRemove(item.product_id)}
                       >
-                        −
-                      </button>
-                      <span className="qty-value">{item.quantity}</span>
-                      <button
-                        className="qty-btn"
-                        type="button"
-                        aria-label="Tăng số lượng"
-                        onClick={() => handleUpdateQuantity(item.product_id, item.quantity + 1)}
-                      >
-                        +
+                        <Trash2 size={16} />
                       </button>
                     </div>
-                    <button
-                      className="cart-remove-btn"
-                      type="button"
-                      aria-label="Xóa sản phẩm"
-                      onClick={() => handleRemove(item.product_id)}
-                    >
-                      <Trash2 size={16} />
-                    </button>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
+
+              {/* Form thông tin giao hàng */}
+              <div className="shipping-form">
+                <h2>Thông tin giao hàng</h2>
+
+                <label className="shipping-label">
+                  Họ và tên người nhận <span className="required-mark">*</span>
+                  <input
+                    type="text"
+                    name="shipping_name"
+                    value={shipping.shipping_name}
+                    placeholder="Nguyễn Văn A"
+                    onChange={handleShippingChange}
+                  />
+                  {shippingErrors.shipping_name && (
+                    <span className="field-error">{shippingErrors.shipping_name}</span>
+                  )}
+                </label>
+
+                <label className="shipping-label">
+                  Số điện thoại <span className="required-mark">*</span>
+                  <input
+                    type="tel"
+                    name="shipping_phone"
+                    value={shipping.shipping_phone}
+                    placeholder="0901234567"
+                    onChange={handleShippingChange}
+                  />
+                  {shippingErrors.shipping_phone && (
+                    <span className="field-error">{shippingErrors.shipping_phone}</span>
+                  )}
+                </label>
+
+                <label className="shipping-label">
+                  Địa chỉ nhận hàng <span className="required-mark">*</span>
+                  <input
+                    type="text"
+                    name="shipping_address"
+                    value={shipping.shipping_address}
+                    placeholder="Số nhà, đường, phường/xã, quận/huyện, tỉnh/thành"
+                    onChange={handleShippingChange}
+                  />
+                  {shippingErrors.shipping_address && (
+                    <span className="field-error">{shippingErrors.shipping_address}</span>
+                  )}
+                </label>
+
+                <label className="shipping-label">
+                  Ghi chú đơn hàng
+                  <textarea
+                    name="shipping_note"
+                    value={shipping.shipping_note}
+                    rows={3}
+                    placeholder="Giao giờ hành chính, gọi trước khi giao..."
+                    onChange={handleShippingChange}
+                  />
+                </label>
+              </div>
             </div>
 
-            {/* Tóm tắt đơn hàng */}
+            {/* Cột phải: tóm tắt đơn hàng */}
             <aside className="summary-panel">
               <h2>Tóm tắt đơn hàng</h2>
 

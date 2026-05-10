@@ -53,16 +53,16 @@ function formatDate(dateStr) {
 // --- Status config ---
 const STATUS_LABEL = {
   pending: 'Chờ xác nhận',
-  processing: 'Đang xử lý',
-  shipped: 'Đang giao',
+  confirmed: 'Đã xác nhận',
+  shipping: 'Đang giao',
   delivered: 'Đã giao',
   cancelled: 'Đã hủy',
 };
 
 const STATUS_MOD = {
   pending: 'badge--warning',
-  processing: 'badge--info',
-  shipped: 'badge--info',
+  confirmed: 'badge--info',
+  shipping: 'badge--info',
   delivered: 'badge--success',
   cancelled: 'badge--danger',
 };
@@ -70,8 +70,8 @@ const STATUS_MOD = {
 const STATUS_FILTERS = [
   { value: '', label: 'Tất cả' },
   { value: 'pending', label: 'Chờ xác nhận' },
-  { value: 'processing', label: 'Đang xử lý' },
-  { value: 'shipped', label: 'Đang giao' },
+  { value: 'confirmed', label: 'Đã xác nhận' },
+  { value: 'shipping', label: 'Đang giao' },
   { value: 'delivered', label: 'Đã giao' },
   { value: 'cancelled', label: 'Đã hủy' },
 ];

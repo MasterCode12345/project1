@@ -716,6 +716,40 @@ textarea:focus {
   gap: 10px;
 }
 
+/* Shipping form */
+.shipping-form {
+  margin-top: 32px;
+  display: grid;
+  gap: 16px;
+}
+
+.shipping-form h2 {
+  margin-bottom: 4px;
+}
+
+.shipping-label {
+  display: grid;
+  gap: 7px;
+  color: var(--text);
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.shipping-label input,
+.shipping-label textarea {
+  font-weight: 400;
+}
+
+.required-mark {
+  color: var(--danger);
+}
+
+.field-error {
+  color: var(--danger);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
 /* Order success */
 .order-success-state {
   border-color: rgba(16, 185, 129, 0.3);
