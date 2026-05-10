@@ -1135,6 +1135,22 @@ textarea:focus {
   font-size: 1.8rem;
 }
 
+.admin-card--warn {
+  border-color: rgba(186, 26, 26, 0.25) !important;
+}
+
+.admin-card--warn svg {
+  color: var(--danger) !important;
+}
+
+.admin-card--warn strong {
+  color: var(--danger);
+}
+
+.admin-card--skeleton {
+  pointer-events: none;
+}
+
 .site-footer {
   margin-top: 48px;
   padding: 44px 0;
