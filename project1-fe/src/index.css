@@ -784,6 +784,23 @@ textarea:focus {
   font-weight: 700;
 }
 
+.auth-error {
+  padding: 11px 14px;
+  border-radius: 8px;
+  background: var(--error-container, #ffdad6);
+  color: var(--danger);
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.auth-optional {
+  margin-left: 6px;
+  font-size: 0.82rem;
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
 .profile-form {
   display: grid;
   gap: 16px;
