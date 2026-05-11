@@ -22,4 +22,11 @@ export const userService = {
   getAdminUsers(params = {}) {
     return apiRequest(`/admin/users${buildQuery(params)}`);
   },
+
+  adminUpdateStatus(id, status) {
+    return apiRequest(`/admin/users/${id}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    });
+  },
 };
