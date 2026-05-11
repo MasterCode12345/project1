@@ -1417,6 +1417,21 @@ textarea:focus {
   cursor: not-allowed;
 }
 
+/* Admin categories */
+.category-name-cell {
+  font-weight: 700;
+  color: var(--text);
+}
+
+.category-desc-cell {
+  max-width: 400px;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* Admin quick links */
 .admin-quick-links {
   display: flex;
