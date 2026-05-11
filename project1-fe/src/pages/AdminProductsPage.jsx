@@ -1,9 +1,10 @@
-import { Eye, EyeOff, Pencil, Plus, Search, Trash2 } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { Eye, EyeOff, Pencil, Plus, Search, Trash2, UploadCloud } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Button from '../components/common/Button.jsx';
 import { getAuthToken } from '../services/apiClient.js';
 import { productService } from '../services/productService.js';
+import { uploadService } from '../services/uploadService.js';
 
 const currencyFormatter = new Intl.NumberFormat('vi-VN', {
   style: 'currency',
@@ -61,6 +62,9 @@ export default function AdminProductsPage() {
   const [formServerError, setFormServerError] = useState('');
   const [formSuccess, setFormSuccess] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState('');
+  const fileInputRef = useRef(null);
   const [categories, setCategories] = useState([]);
 
   const totalPages = useMemo(() => Math.max(1, Math.ceil(total / PAGE_SIZE)), [total]);
@@ -167,6 +171,24 @@ export default function AdminProductsPage() {
     if (formServerError) setFormServerError('');
   }
 
+  async function handleFileChange(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    // Reset input để có thể chọn lại cùng file
+    e.target.value = '';
+
+    setIsUploading(true);
+    setUploadError('');
+    try {
+      const url = await uploadService.uploadImage(file, 'products');
+      setForm((prev) => ({ ...prev, image_url: url }));
+    } catch (err) {
+      setUploadError(err.message || 'Upload ảnh thất bại.');
+    } finally {
+      setIsUploading(false);
+    }
+  }
+
   function validateForm() {
     const errs = {};
     if (!form.sku.trim()) errs.sku = 'Vui lòng nhập SKU';
@@ -256,8 +278,41 @@ export default function AdminProductsPage() {
                     <textarea name="description" value={form.description} rows={4} placeholder="Mô tả chi tiết sản phẩm..." onChange={handleFormChange} />
                   </label>
                   <label>
-                    URL ảnh đại diện
-                    <input type="url" name="image_url" value={form.image_url} placeholder="https://..." onChange={handleFormChange} />
+                    Ảnh đại diện
+                    {/* Preview */}
+                    {form.image_url && (
+                      <div className="upload-preview">
+                        <img src={form.image_url} alt="Preview" />
+                      </div>
+                    )}
+                    {/* Upload button + hidden file input */}
+                    <div className="upload-row">
+                      <input
+                        type="url"
+                        name="image_url"
+                        value={form.image_url}
+                        placeholder="https://... hoặc upload ảnh →"
+                        onChange={handleFormChange}
+                        style={{ flex: 1 }}
+                      />
+                      <button
+                        type="button"
+                        className="upload-btn"
+                        disabled={isUploading}
+                        onClick={() => fileInputRef.current?.click()}
+                      >
+                        <UploadCloud size={16} />
+                        {isUploading ? 'Đang tải…' : 'Upload'}
+                      </button>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        style={{ display: 'none' }}
+                        onChange={handleFileChange}
+                      />
+                    </div>
+                    {uploadError && <span className="field-error">{uploadError}</span>}
                   </label>
                 </div>
               </div>
