@@ -120,6 +120,7 @@ export default function AdminDashboardPage() {
           <Link className="admin-quick-link" to="/admin/orders">Quản lý đơn hàng →</Link>
           <Link className="admin-quick-link" to="/admin/products">Quản lý sản phẩm →</Link>
           <Link className="admin-quick-link" to="/admin/users">Quản lý người dùng →</Link>
+          <Link className="admin-quick-link" to="/admin/categories">Quản lý danh mục →</Link>
         </div>
 
         {/* Stat cards */}
