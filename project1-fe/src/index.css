@@ -1678,6 +1678,54 @@ textarea:focus {
   gap: 12px;
 }
 
+/* Order detail */
+.order-item-row--detail {
+  grid-template-columns: 1fr auto auto auto;
+}
+
+.order-item-subtotal {
+  flex-shrink: 0;
+  font-weight: 700;
+  color: var(--primary-dark);
+  font-size: 0.85rem;
+}
+
+.order-total--large span {
+  font-size: 1.15rem;
+  color: var(--primary-dark);
+}
+
+.order-detail-info-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.order-detail-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: 0.9rem;
+}
+
+.order-detail-info-row span {
+  color: var(--text-muted);
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.order-detail-info-row strong {
+  color: var(--text);
+  text-align: right;
+  font-weight: 600;
+}
+
+.text-success {
+  color: var(--primary-dark) !important;
+}
+
 /* Active category filter bar */
 .active-filter-bar {
   display: flex;

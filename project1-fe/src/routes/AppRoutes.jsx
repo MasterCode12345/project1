@@ -9,6 +9,7 @@ import CartPage from '../pages/CartPage.jsx';
 import HomePage from '../pages/HomePage.jsx';
 import LoginPage from '../pages/LoginPage.jsx';
 import MyOrdersPage from '../pages/MyOrdersPage.jsx';
+import OrderDetailPage from '../pages/OrderDetailPage.jsx';
 import ProductDetailPage from '../pages/ProductDetailPage.jsx';
 import ProductListPage from '../pages/ProductListPage.jsx';
 import ProfilePage from '../pages/ProfilePage.jsx';
@@ -26,6 +27,7 @@ export default function AppRoutes() {
         <Route path="register" element={<RegisterPage />} />
         <Route path="profile" element={<ProfilePage />} />
         <Route path="orders" element={<MyOrdersPage />} />
+        <Route path="orders/:id" element={<OrderDetailPage />} />
         <Route path="admin" element={<AdminDashboardPage />} />
         <Route path="admin/orders" element={<AdminOrdersPage />} />
         <Route path="admin/products" element={<AdminProductsPage />} />

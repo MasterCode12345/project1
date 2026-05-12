@@ -286,16 +286,24 @@ export default function MyOrdersPage() {
                       Tổng cộng:{' '}
                       <span>{currencyFormatter.format(order.total_amount)}</span>
                     </strong>
-                    {order.status === 'pending' && (
+                    <div style={{ display: 'flex', gap: 8 }}>
                       <Button
-                        type="button"
                         variant="secondary"
-                        disabled={cancellingId === order.id}
-                        onClick={() => handleCancel(order.id)}
+                        to={`/orders/${order.id}`}
                       >
-                        {cancellingId === order.id ? 'Đang hủy…' : 'Hủy đơn'}
+                        Xem chi tiết
                       </Button>
-                    )}
+                      {order.status === 'pending' && (
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          disabled={cancellingId === order.id}
+                          onClick={() => handleCancel(order.id)}
+                        >
+                          {cancellingId === order.id ? 'Đang hủy…' : 'Hủy đơn'}
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}
