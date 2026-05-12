@@ -1678,6 +1678,43 @@ textarea:focus {
   gap: 12px;
 }
 
+/* Active category filter bar */
+.active-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 10px 14px;
+  background: var(--primary-soft);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 10px;
+  font-size: 0.88rem;
+}
+
+.active-filter-label {
+  color: var(--primary-dark);
+}
+
+.active-filter-clear {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  color: var(--primary-dark);
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 3px 8px;
+  border-radius: 6px;
+  margin-left: auto;
+  transition: background 120ms;
+}
+
+.active-filter-clear:hover {
+  background: rgba(16, 185, 129, 0.15);
+}
+
 /* Admin users */
 .user-name-cell {
   display: flex;

@@ -1,5 +1,6 @@
-import { Search } from 'lucide-react';
+import { Search, X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import Button from '../components/common/Button.jsx';
 import SectionHeader from '../components/common/SectionHeader.jsx';
 import ProductCard from '../components/product/ProductCard.jsx';
@@ -8,17 +9,36 @@ import { productService } from '../services/productService.js';
 const PAGE_SIZE = 12;
 
 export default function ProductListPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+
   const [products, setProducts] = useState([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [query, setQuery] = useState('');
   const [searchText, setSearchText] = useState('');
   const [sort, setSort] = useState('');
+  const [categoryId, setCategoryId] = useState(() => searchParams.get('category_id') || '');
+  const [categories, setCategories] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [reloadKey, setReloadKey] = useState(0);
 
   const totalPages = useMemo(() => Math.max(1, Math.ceil(total / PAGE_SIZE)), [total]);
+
+  // Fetch categories để hiện tên danh mục đang lọc
+  useEffect(() => {
+    productService.getCategories().then((data) => {
+      const list = Array.isArray(data) ? data : (data?.items ?? []);
+      setCategories(list);
+    }).catch(() => {});
+  }, []);
+
+  // Đọc category_id từ URL khi params thay đổi
+  useEffect(() => {
+    const catId = searchParams.get('category_id') || '';
+    setCategoryId(catId);
+    setPage(1);
+  }, [searchParams]);
 
   useEffect(() => {
     let isMounted = true;
@@ -33,6 +53,7 @@ export default function ProductListPage() {
           page_size: PAGE_SIZE,
           q: query,
           sort,
+          category_id: categoryId || undefined,
         });
 
         if (!isMounted) {
@@ -61,7 +82,7 @@ export default function ProductListPage() {
     return () => {
       isMounted = false;
     };
-  }, [page, query, reloadKey, sort]);
+  }, [page, query, reloadKey, sort, categoryId]);
 
   function handleSearchSubmit(event) {
     event.preventDefault();
@@ -84,7 +105,6 @@ export default function ProductListPage() {
         <SectionHeader
           eyebrow="Catalog"
           title="Tất cả sản phẩm"
-          description="Danh sách sản phẩm được lấy từ API public của backend."
         />
 
         <form className="filter-bar" onSubmit={handleSearchSubmit}>
@@ -107,6 +127,28 @@ export default function ProductListPage() {
             Tìm
           </Button>
         </form>
+
+        {/* Hiển thị filter category đang active */}
+        {categoryId && (
+          <div className="active-filter-bar">
+            <span className="active-filter-label">
+              Danh mục: <strong>
+                {categories.find((c) => c.id === categoryId)?.name || categoryId}
+              </strong>
+            </span>
+            <button
+              type="button"
+              className="active-filter-clear"
+              onClick={() => {
+                setSearchParams({});
+                setCategoryId('');
+                setPage(1);
+              }}
+            >
+              <X size={14} /> Xóa lọc
+            </button>
+          </div>
+        )}
 
         {isLoading && (
           <div className="product-grid" aria-label="Đang tải sản phẩm">

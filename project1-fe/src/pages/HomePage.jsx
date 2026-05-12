@@ -251,14 +251,14 @@ export default function HomePage() {
             />
             <div className="home-category-grid">
               {categories.map((cat) => (
-                <a
+                <Link
                   key={cat.id}
                   className="home-category-card"
-                  href={`/products?category_id=${cat.id}`}
+                  to={`/products?category_id=${cat.id}`}
                 >
                   <span className="home-category-name">{cat.name}</span>
                   <ArrowRight size={16} className="home-category-arrow" />
-                </a>
+                </Link>
               ))}
             </div>
           </div>

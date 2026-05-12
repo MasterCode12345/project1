@@ -16,7 +16,7 @@ export default function Footer() {
         </div>
         <div>
           <h3>Liên hệ</h3>
-          <p>support@unimarket.vn</p>
+          <p>nghiamaster09042005@gmail.com</p>
           <p>08:00 - 17:30</p>
         </div>
       </div>
