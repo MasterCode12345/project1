@@ -81,4 +81,11 @@ var (
 
 	// 500 - Internal
 	ErrInternal = New("INTERNAL", "Có lỗi xảy ra phía server", http.StatusInternalServerError)
+
+	// Email verification
+	ErrEmailNotVerified   = New("EMAIL_NOT_VERIFIED", "Email chưa được xác minh. Vui lòng kiểm tra hộp thư.", http.StatusForbidden)
+	ErrVerifyTokenInvalid = New("VERIFY_TOKEN_INVALID", "Liên kết xác minh không hợp lệ hoặc đã hết hạn.", http.StatusBadRequest)
+
+	// Password reset
+	ErrResetTokenInvalid = New("RESET_TOKEN_INVALID", "Liên kết đặt lại mật khẩu không hợp lệ hoặc đã hết hạn.", http.StatusBadRequest)
 )

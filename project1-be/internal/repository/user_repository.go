@@ -22,6 +22,14 @@ type UserRepository interface {
 	UpdatePassword(ctx context.Context, id bson.ObjectID, passwordHash string) error
 	List(ctx context.Context, page, pageSize int) ([]model.User, int64, error)
 	UpdateStatus(ctx context.Context, id bson.ObjectID, status string) error
+	// Email verification
+	FindByVerifyToken(ctx context.Context, token string) (*model.User, error)
+	SetVerified(ctx context.Context, id bson.ObjectID) error
+	DeleteExpiredPending(ctx context.Context) (int64, error)
+	// Password reset
+	SetResetToken(ctx context.Context, id bson.ObjectID, token string, expiry time.Time) error
+	FindByResetToken(ctx context.Context, token string) (*model.User, error)
+	ResetPassword(ctx context.Context, id bson.ObjectID, passwordHash string) error
 }
 
 type userRepository struct {
@@ -160,6 +168,103 @@ func (r *userRepository) UpdateStatus(ctx context.Context, id bson.ObjectID, sta
 	}
 	if res.MatchedCount == 0 {
 		return apperror.ErrUserNotFound
+	}
+	return nil
+}
+
+// FindByVerifyToken tìm user theo token xác minh email (chưa hết hạn)
+func (r *userRepository) FindByVerifyToken(ctx context.Context, token string) (*model.User, error) {
+	var u model.User
+	err := r.col.FindOne(ctx, bson.M{
+		"verify_token":        token,
+		"verify_token_expiry": bson.M{"$gt": time.Now()},
+		"status":              model.UserStatusPending,
+	}).Decode(&u)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, apperror.ErrVerifyTokenInvalid
+		}
+		return nil, apperror.Wrap(err, "DB_ERROR", "Lỗi tìm token xác minh", 500)
+	}
+	return &u, nil
+}
+
+// SetVerified kích hoạt tài khoản và xóa token
+func (r *userRepository) SetVerified(ctx context.Context, id bson.ObjectID) error {
+	_, err := r.col.UpdateByID(ctx, id, bson.M{
+		"$set": bson.M{
+			"status":     model.UserStatusActive,
+			"updated_at": time.Now(),
+		},
+		"$unset": bson.M{
+			"verify_token":        "",
+			"verify_token_expiry": "",
+		},
+	})
+	if err != nil {
+		return apperror.Wrap(err, "DB_ERROR", "Lỗi xác minh email", 500)
+	}
+	return nil
+}
+
+// DeleteExpiredPending xóa tài khoản pending quá hạn (dùng cho cleanup job)
+func (r *userRepository) DeleteExpiredPending(ctx context.Context) (int64, error) {
+	res, err := r.col.DeleteMany(ctx, bson.M{
+		"status":              model.UserStatusPending,
+		"verify_token_expiry": bson.M{"$lt": time.Now()},
+	})
+	if err != nil {
+		return 0, apperror.Wrap(err, "DB_ERROR", "Lỗi xóa tài khoản hết hạn", 500)
+	}
+	return res.DeletedCount, nil
+}
+
+// SetResetToken lưu reset token vào user
+func (r *userRepository) SetResetToken(ctx context.Context, id bson.ObjectID, token string, expiry time.Time) error {
+	_, err := r.col.UpdateByID(ctx, id, bson.M{
+		"$set": bson.M{
+			"reset_token":        token,
+			"reset_token_expiry": expiry,
+			"updated_at":         time.Now(),
+		},
+	})
+	if err != nil {
+		return apperror.Wrap(err, "DB_ERROR", "Lỗi lưu reset token", 500)
+	}
+	return nil
+}
+
+// FindByResetToken tìm user theo reset token còn hiệu lực
+func (r *userRepository) FindByResetToken(ctx context.Context, token string) (*model.User, error) {
+	var u model.User
+	err := r.col.FindOne(ctx, bson.M{
+		"reset_token":        token,
+		"reset_token_expiry": bson.M{"$gt": time.Now()},
+		"status":             model.UserStatusActive,
+	}).Decode(&u)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, apperror.ErrResetTokenInvalid
+		}
+		return nil, apperror.Wrap(err, "DB_ERROR", "Lỗi tìm reset token", 500)
+	}
+	return &u, nil
+}
+
+// ResetPassword cập nhật mật khẩu và xóa reset token
+func (r *userRepository) ResetPassword(ctx context.Context, id bson.ObjectID, passwordHash string) error {
+	_, err := r.col.UpdateByID(ctx, id, bson.M{
+		"$set": bson.M{
+			"password_hash": passwordHash,
+			"updated_at":    time.Now(),
+		},
+		"$unset": bson.M{
+			"reset_token":        "",
+			"reset_token_expiry": "",
+		},
+	})
+	if err != nil {
+		return apperror.Wrap(err, "DB_ERROR", "Lỗi đặt lại mật khẩu", 500)
 	}
 	return nil
 }

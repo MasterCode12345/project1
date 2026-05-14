@@ -33,11 +33,12 @@ func main() {
 	productRepo := repository.NewProductRepository(db)
 	orderRepo := repository.NewOrderRepository(db)
 
-	authSvc := service.NewAuthService(userRepo, cfg.JWTSecret, cfg.JWTExpiresHours)
+	emailSvc := service.NewEmailService(cfg)
+	authSvc := service.NewAuthService(userRepo, emailSvc, cfg.JWTSecret, cfg.JWTExpiresHours)
 	userSvc := service.NewUserService(userRepo)
 	categorySvc := service.NewCategoryService(categoryRepo)
 	productSvc := service.NewProductService(productRepo)
-	orderSvc := service.NewOrderService(orderRepo, productRepo)
+	orderSvc := service.NewOrderService(orderRepo, productRepo, userRepo, emailSvc)
 	dashboardSvc := service.NewDashboardService(orderRepo, productRepo)
 
 	uploadSvc, err := service.NewUploadService(cfg)
@@ -68,6 +69,22 @@ func main() {
 		log.Printf("[boot] server đang lắng nghe tại http://localhost:%s", cfg.AppPort)
 		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			log.Fatalf("[boot] listen lỗi: %v", err)
+		}
+	}()
+
+	// Cleanup job: xóa tài khoản pending quá hạn mỗi 5 phút
+	go func() {
+		ticker := time.NewTicker(5 * time.Minute)
+		defer ticker.Stop()
+		for range ticker.C {
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			n, err := userRepo.DeleteExpiredPending(ctx)
+			cancel()
+			if err != nil {
+				log.Printf("[cleanup] lỗi xóa tài khoản hết hạn: %v", err)
+			} else if n > 0 {
+				log.Printf("[cleanup] đã xóa %d tài khoản pending hết hạn", n)
+			}
 		}
 	}()
 
