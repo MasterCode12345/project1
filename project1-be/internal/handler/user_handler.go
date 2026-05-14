@@ -71,6 +71,39 @@ func (h *UserHandler) AdminList(c *gin.Context) {
 	respond(c, http.StatusOK, res)
 }
 
+func (h *UserHandler) AdminCreate(c *gin.Context) {
+	var in model.AdminCreateUserInput
+	if err := c.ShouldBindJSON(&in); err != nil {
+		respondError(c, apperror.Wrap(err, apperror.ErrInvalidInput.Code, "Dữ liệu không hợp lệ", http.StatusBadRequest))
+		return
+	}
+	u, err := h.users.AdminCreate(c.Request.Context(), in)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+	respond(c, http.StatusCreated, u)
+}
+
+func (h *UserHandler) AdminUpdateUser(c *gin.Context) {
+	id, err := parseObjectIDParam(c, "id")
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+	var in model.AdminUpdateUserInput
+	if err := c.ShouldBindJSON(&in); err != nil {
+		respondError(c, apperror.Wrap(err, apperror.ErrInvalidInput.Code, "Dữ liệu không hợp lệ", http.StatusBadRequest))
+		return
+	}
+	u, err := h.users.AdminUpdateUser(c.Request.Context(), id, in)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+	respond(c, http.StatusOK, u)
+}
+
 func (h *UserHandler) AdminUpdateStatus(c *gin.Context) {
 	id, err := parseObjectIDParam(c, "id")
 	if err != nil {

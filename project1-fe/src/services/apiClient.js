@@ -9,9 +9,35 @@ export function getAuthToken() {
 export function setAuthToken(token) {
   if (token) {
     localStorage.setItem(TOKEN_KEY, token);
-    return;
+  } else {
+    localStorage.removeItem(TOKEN_KEY);
   }
-  localStorage.removeItem(TOKEN_KEY);
+  // Notify same-tab listeners (storage event chỉ fire cross-tab)
+  window.dispatchEvent(new Event('auth-updated'));
+}
+
+// Decode JWT payload để lấy role mà không cần gọi API
+export function getUserRole() {
+  const token = getAuthToken();
+  if (!token) return null;
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload.role || null; // 'admin' | 'customer'
+  } catch {
+    return null;
+  }
+}
+
+// Lấy userId từ JWT (dùng cho cart per-user)
+export function getUserId() {
+  const token = getAuthToken();
+  if (!token) return null;
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload.user_id || null;
+  } catch {
+    return null;
+  }
 }
 
 async function parseResponse(response) {

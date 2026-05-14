@@ -1,17 +1,29 @@
-const CART_STORAGE_KEY = 'project1_cart_items';
+import { getUserId } from './apiClient';
+
+const CART_PREFIX = 'project1_cart_';
+
+// Key riêng theo userId — guest dùng 'guest'
+function cartKey() {
+  const uid = getUserId();
+  return `${CART_PREFIX}${uid || 'guest'}`;
+}
 
 function readCart() {
-  return JSON.parse(localStorage.getItem(CART_STORAGE_KEY) || '[]');
+  return JSON.parse(localStorage.getItem(cartKey()) || '[]');
 }
 
 function writeCart(items) {
-  localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
+  localStorage.setItem(cartKey(), JSON.stringify(items));
+  window.dispatchEvent(new Event('cart-updated'));
   return items;
+}
+
+export function getCartCount() {
+  return readCart().reduce((sum, item) => sum + item.quantity, 0);
 }
 
 export const cartService = {
   getCart() {
-    // TODO: Backend router hiện chưa có /api/v1/cart, tạm dùng localStorage.
     return Promise.resolve(readCart());
   },
 

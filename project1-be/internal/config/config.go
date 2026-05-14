@@ -23,6 +23,14 @@ type Config struct {
 	CloudinaryCloudName string
 	CloudinaryAPIKey    string
 	CloudinaryAPISecret string
+
+	// SMTP — gửi email xác minh tài khoản
+	SMTPHost     string
+	SMTPPort     string
+	SMTPUser     string
+	SMTPPassword string
+	SMTPFrom     string
+	AppURL       string // URL FE, dùng để build link xác minh
 }
 
 func Load() *Config {
@@ -47,6 +55,13 @@ func Load() *Config {
 		CloudinaryCloudName: mustEnv("CLOUDINARY_CLOUD_NAME"),
 		CloudinaryAPIKey:    mustEnv("CLOUDINARY_API_KEY"),
 		CloudinaryAPISecret: mustEnv("CLOUDINARY_API_SECRET"),
+
+		SMTPHost:     getEnv("SMTP_HOST", "smtp.gmail.com"),
+		SMTPPort:     getEnv("SMTP_PORT", "587"),
+		SMTPUser:     getEnv("SMTP_USER", ""),
+		SMTPPassword: getEnv("SMTP_PASSWORD", ""),
+		SMTPFrom:     getEnv("SMTP_FROM", "no-reply@unimarket.vn"),
+		AppURL:       getEnv("APP_URL", "http://localhost:5173"),
 	}
 
 	return cfg

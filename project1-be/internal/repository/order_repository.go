@@ -18,6 +18,9 @@ type OrderRepository interface {
 	FindByID(ctx context.Context, id bson.ObjectID) (*model.Order, error)
 	List(ctx context.Context, f *model.OrderFilter) ([]model.Order, int64, error)
 	UpdateStatus(ctx context.Context, id bson.ObjectID, status string, paymentStatus *string, paidAt, cancelledAt *time.Time) error
+	// UpdateStatusConditional chỉ cập nhật nếu status hiện tại khớp với fromStatus.
+	// Trả về (matched=true) nếu update thành công, (matched=false) nếu status đã thay đổi.
+	UpdateStatusConditional(ctx context.Context, id bson.ObjectID, fromStatus, toStatus string, paymentStatus *string, paidAt, cancelledAt *time.Time) (bool, error)
 	CountToday(ctx context.Context) (int64, error)
 	CountTotal(ctx context.Context) (int64, error)
 }
@@ -122,6 +125,38 @@ func (r *orderRepository) UpdateStatus(ctx context.Context, id bson.ObjectID, st
 		return apperror.ErrOrderNotFound
 	}
 	return nil
+}
+
+// UpdateStatusConditional — atomic check-and-set, tránh race condition khi nhiều request
+// cùng update status của cùng 1 đơn hàng.
+func (r *orderRepository) UpdateStatusConditional(
+	ctx context.Context,
+	id bson.ObjectID,
+	fromStatus, toStatus string,
+	paymentStatus *string,
+	paidAt, cancelledAt *time.Time,
+) (bool, error) {
+	set := bson.M{
+		"status":     toStatus,
+		"updated_at": time.Now(),
+	}
+	if paymentStatus != nil {
+		set["payment_status"] = *paymentStatus
+	}
+	if paidAt != nil {
+		set["paid_at"] = *paidAt
+	}
+	if cancelledAt != nil {
+		set["cancelled_at"] = *cancelledAt
+	}
+
+	// Filter bao gồm cả status hiện tại → chỉ match nếu chưa bị update bởi goroutine khác
+	filter := bson.M{"_id": id, "status": fromStatus}
+	res, err := r.col.UpdateOne(ctx, filter, bson.M{"$set": set})
+	if err != nil {
+		return false, apperror.Wrap(err, "DB_ERROR", "Lỗi cập nhật trạng thái", 500)
+	}
+	return res.MatchedCount > 0, nil
 }
 
 func (r *orderRepository) CountToday(ctx context.Context) (int64, error) {

@@ -19,6 +19,8 @@ type UserService interface {
 
 	List(ctx context.Context, page, pageSize int) (*model.PageResult[model.User], error)
 	UpdateStatus(ctx context.Context, userID bson.ObjectID, status string) error
+	AdminCreate(ctx context.Context, in model.AdminCreateUserInput) (*model.User, error)
+	AdminUpdateUser(ctx context.Context, userID bson.ObjectID, in model.AdminUpdateUserInput) (*model.User, error)
 }
 
 type userService struct {
@@ -74,6 +76,44 @@ func (s *userService) UpdateStatus(ctx context.Context, userID bson.ObjectID, st
 		return apperror.New("INVALID_STATUS", "Trạng thái không hợp lệ", 400)
 	}
 	return s.users.UpdateStatus(ctx, userID, status)
+}
+
+func (s *userService) AdminCreate(ctx context.Context, in model.AdminCreateUserInput) (*model.User, error) {
+	hash, err := bcrypt.GenerateFromPassword([]byte(in.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return nil, apperror.Wrap(err, "HASH_ERROR", "Không thể hash password", 500)
+	}
+
+	role := in.Role
+	if role == "" {
+		role = "customer"
+	}
+
+	var phonePtr *string
+	if p := strings.TrimSpace(in.Phone); p != "" {
+		phonePtr = &p
+	}
+
+	u := &model.User{
+		Email:        in.Email,
+		PasswordHash: string(hash),
+		FullName:     strings.TrimSpace(in.FullName),
+		Phone:        phonePtr,
+		Role:         role,
+		Status:       "active",
+	}
+	if err := s.users.Create(ctx, u); err != nil {
+		return nil, err
+	}
+	return u, nil
+}
+
+func (s *userService) AdminUpdateUser(ctx context.Context, userID bson.ObjectID, in model.AdminUpdateUserInput) (*model.User, error) {
+	return s.users.UpdateProfile(ctx, userID,
+		strings.TrimSpace(in.FullName),
+		strings.TrimSpace(in.Phone),
+		strings.TrimSpace(in.Address),
+	)
 }
 
 func normalizePage(p int) int {

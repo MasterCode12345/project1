@@ -39,6 +39,9 @@ func New(cfg *config.Config, h *Handlers) *gin.Engine {
 	{
 		v1.POST("/auth/register", h.Auth.Register)
 		v1.POST("/auth/login", h.Auth.Login)
+		v1.GET("/auth/verify-email/:token", h.Auth.VerifyEmail)
+		v1.POST("/auth/forgot-password", h.Auth.ForgotPassword)
+		v1.POST("/auth/reset-password", h.Auth.ResetPassword)
 
 		v1.GET("/categories", h.Category.PublicList)
 
@@ -49,6 +52,8 @@ func New(cfg *config.Config, h *Handlers) *gin.Engine {
 	auth := v1.Group("")
 	auth.Use(middleware.RequireAuth(cfg.JWTSecret))
 	{
+		auth.POST("/auth/logout", h.Auth.Logout)
+
 		auth.GET("/me", h.User.GetMe)
 		auth.PUT("/me", h.User.UpdateMe)
 		auth.PUT("/me/password", h.User.ChangePassword)
@@ -89,6 +94,8 @@ func New(cfg *config.Config, h *Handlers) *gin.Engine {
 		admin.PATCH("/orders/:id/status", h.Order.AdminUpdateStatus)
 
 		admin.GET("/users", h.User.AdminList)
+		admin.POST("/users", h.User.AdminCreate)
+		admin.PUT("/users/:id", h.User.AdminUpdateUser)
 		admin.PATCH("/users/:id/status", h.User.AdminUpdateStatus)
 	}
 

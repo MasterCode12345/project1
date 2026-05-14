@@ -15,6 +15,7 @@ import (
 	"project1-be/internal/repository"
 )
 
+
 type OrderService interface {
 	Create(ctx context.Context, userID bson.ObjectID, in model.CreateOrderInput) (*model.Order, error)
 	GetMyOrders(ctx context.Context, userID bson.ObjectID, page, pageSize int, status *string) (*model.PageResult[model.Order], error)
@@ -28,13 +29,17 @@ type OrderService interface {
 type orderService struct {
 	orders   repository.OrderRepository
 	products repository.ProductRepository
+	users    repository.UserRepository
+	email    EmailService
 }
 
 func NewOrderService(
 	orders repository.OrderRepository,
 	products repository.ProductRepository,
+	users repository.UserRepository,
+	email EmailService,
 ) OrderService {
-	return &orderService{orders: orders, products: products}
+	return &orderService{orders: orders, products: products, users: users, email: email}
 }
 
 func (s *orderService) Create(ctx context.Context, userID bson.ObjectID, in model.CreateOrderInput) (*model.Order, error) {
@@ -45,24 +50,47 @@ func (s *orderService) Create(ctx context.Context, userID bson.ObjectID, in mode
 	var total float64
 	orderItems := make([]model.OrderItem, 0, len(in.Items))
 
+	// decremented theo dõi các sản phẩm đã trừ stock để rollback nếu có lỗi giữa chừng
+	type stockEntry struct {
+		id  bson.ObjectID
+		qty int
+	}
+	decremented := make([]stockEntry, 0, len(in.Items))
+
 	for _, it := range in.Items {
 		productID, err := bson.ObjectIDFromHex(it.ProductID)
 		if err != nil {
+			// Rollback stock đã trừ trước đó
+			for _, d := range decremented {
+				_ = s.products.IncrementStock(ctx, d.id, d.qty)
+			}
 			return nil, apperror.ErrProductNotFound
 		}
 
 		p, err := s.products.FindByID(ctx, productID)
 		if err != nil {
+			for _, d := range decremented {
+				_ = s.products.IncrementStock(ctx, d.id, d.qty)
+			}
 			return nil, err
 		}
 		if !p.IsVisible {
+			for _, d := range decremented {
+				_ = s.products.IncrementStock(ctx, d.id, d.qty)
+			}
 			return nil, apperror.New("PRODUCT_HIDDEN",
 				fmt.Sprintf("Sản phẩm \"%s\" hiện không bán", p.Name), 422)
 		}
 
+		// DecrementStock dùng $inc có điều kiện — atomic, tránh overselling
 		if err := s.products.DecrementStock(ctx, productID, it.Quantity); err != nil {
+			// Rollback các item đã trừ thành công trước đó
+			for _, d := range decremented {
+				_ = s.products.IncrementStock(ctx, d.id, d.qty)
+			}
 			return nil, err
 		}
+		decremented = append(decremented, stockEntry{id: productID, qty: it.Quantity})
 
 		subtotal := float64(it.Quantity) * p.Price
 		total += subtotal
@@ -95,8 +123,38 @@ func (s *orderService) Create(ctx context.Context, userID bson.ObjectID, in mode
 		Items:           orderItems,
 	}
 	if err := s.orders.Create(ctx, order); err != nil {
+		// Rollback toàn bộ stock nếu tạo đơn thất bại
+		for _, d := range decremented {
+			_ = s.products.IncrementStock(ctx, d.id, d.qty)
+		}
 		return nil, err
 	}
+
+	// Gửi email xác nhận đơn hàng (non-blocking)
+	go func(o *model.Order, uid bson.ObjectID) {
+		u, err := s.users.FindByID(context.Background(), uid)
+		if err != nil {
+			return
+		}
+		items := make([]OrderItemEmailData, len(o.Items))
+		for i, it := range o.Items {
+			items[i] = OrderItemEmailData{
+				ProductName: it.ProductName,
+				Quantity:    it.Quantity,
+				UnitPrice:   it.UnitPrice,
+				Subtotal:    it.Subtotal,
+			}
+		}
+		_ = s.email.SendOrderConfirmationEmail(u.Email, u.FullName, &OrderEmailData{
+			OrderCode:       o.OrderCode,
+			ShippingName:    o.ShippingName,
+			ShippingPhone:   o.ShippingPhone,
+			ShippingAddress: o.ShippingAddress,
+			Items:           items,
+			TotalAmount:     o.TotalAmount,
+			PaymentMethod:   o.PaymentMethod,
+		})
+	}(order, userID)
 
 	return order, nil
 }
@@ -147,17 +205,25 @@ func (s *orderService) Cancel(ctx context.Context, userID, orderID bson.ObjectID
 		}
 	}
 
+	// Atomic check-and-set: chỉ update nếu status vẫn là fromStatus
+	// Tránh race condition: 2 request cancel cùng lúc chỉ 1 cái thành công
+	now := time.Now()
+	matched, err := s.orders.UpdateStatusConditional(ctx, o.ID, o.Status, model.OrderStatusCancelled, nil, nil, &now)
+	if err != nil {
+		return nil, err
+	}
+	if !matched {
+		// Goroutine khác đã update status trước — refresh và trả lỗi
+		return nil, apperror.ErrCannotCancelOrder
+	}
+
+	// Chỉ restore stock SAU KHI status đã được update thành công
 	for _, it := range o.Items {
 		if err := s.products.IncrementStock(ctx, it.ProductID, it.Quantity); err != nil {
 			if !errors.Is(err, apperror.ErrProductNotFound) {
 				return nil, err
 			}
 		}
-	}
-
-	now := time.Now()
-	if err := s.orders.UpdateStatus(ctx, o.ID, model.OrderStatusCancelled, nil, nil, &now); err != nil {
-		return nil, err
 	}
 
 	o.Status = model.OrderStatusCancelled
@@ -190,20 +256,29 @@ func (s *orderService) UpdateStatus(ctx context.Context, orderID bson.ObjectID, 
 			fmt.Sprintf("Không thể chuyển từ '%s' sang '%s'", o.Status, status), 422)
 	}
 
-	var paidAt, cancelledAt *time.Time
-	var paymentStatus *string
-	now := time.Now()
-	switch status {
-	case model.OrderStatusDelivered:
-		paidAt = &now
-		ps := model.PaymentStatusPaid
-		paymentStatus = &ps
-	case model.OrderStatusCancelled:
+	// Hủy đơn → dùng Cancel để đảm bảo stock được restore
+	if status == model.OrderStatusCancelled {
 		return s.Cancel(ctx, bson.ObjectID{}, orderID, middleware.RoleAdmin)
 	}
 
-	if err := s.orders.UpdateStatus(ctx, orderID, status, paymentStatus, paidAt, cancelledAt); err != nil {
+	var paidAt, cancelledAt *time.Time
+	var paymentStatus *string
+	now := time.Now()
+	if status == model.OrderStatusDelivered {
+		paidAt = &now
+		ps := model.PaymentStatusPaid
+		paymentStatus = &ps
+	}
+
+	// Atomic conditional update: chỉ update nếu status vẫn là o.Status
+	// Tránh race condition khi 2 admin cùng update 1 đơn
+	matched, err := s.orders.UpdateStatusConditional(ctx, orderID, o.Status, status, paymentStatus, paidAt, cancelledAt)
+	if err != nil {
 		return nil, err
+	}
+	if !matched {
+		return nil, apperror.New("STATUS_CONFLICT",
+			"Trạng thái đơn hàng đã thay đổi, vui lòng tải lại trang", 409)
 	}
 
 	return s.orders.FindByID(ctx, orderID)

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import Button from '../components/common/Button.jsx';
+import { getUserRole } from '../services/apiClient.js';
 import { authService } from '../services/authService.js';
 
 export default function LoginPage() {
@@ -43,9 +44,15 @@ export default function LoginPage() {
         email: form.email.trim(),
         password: form.password,
       });
-      navigate(from, { replace: true });
+      const role = getUserRole();
+      navigate(role === 'admin' ? '/admin' : (from === '/login' ? '/' : from), { replace: true });
     } catch (err) {
-      setServerError(err.message || 'Đăng nhập thất bại, vui lòng thử lại.');
+      // Hiển thị thông báo riêng khi chưa xác minh email
+      if (err.code === 'EMAIL_NOT_VERIFIED' || err.message?.includes('xác minh')) {
+        setServerError('Email chưa được xác minh. Vui lòng kiểm tra hộp thư (kể cả Spam).');
+      } else {
+        setServerError(err.message || 'Đăng nhập thất bại, vui lòng thử lại.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -86,6 +93,15 @@ export default function LoginPage() {
           />
           {errors.password && <span className="field-error">{errors.password}</span>}
         </label>
+
+        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <Link
+            to="/forgot-password"
+            style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600 }}
+          >
+            Quên mật khẩu?
+          </Link>
+        </div>
 
         <Button type="submit" disabled={isLoading}>
           {isLoading ? 'Đang đăng nhập…' : 'Đăng nhập'}
