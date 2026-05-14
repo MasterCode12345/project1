@@ -170,6 +170,123 @@ main {
   display: none;
 }
 
+/* Cart badge */
+.cart-btn {
+  position: relative;
+}
+
+.cart-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--danger);
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 800;
+  display: grid;
+  place-items: center;
+  line-height: 1;
+  pointer-events: none;
+}
+
+/* Admin shell with sidebar */
+.admin-shell {
+  display: flex;
+  min-height: 100vh;
+}
+
+.admin-sidebar {
+  width: 220px;
+  flex-shrink: 0;
+  background: var(--surface-card);
+  border-right: 1px solid var(--outline);
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+.admin-sidebar-header {
+  padding: 22px 20px 14px;
+  border-bottom: 1px solid var(--outline);
+}
+
+.admin-sidebar-title {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.admin-sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 10px;
+}
+
+.admin-sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.admin-sidebar-link:hover {
+  background: var(--surface-muted);
+  color: var(--text);
+}
+
+.admin-sidebar-link--active {
+  background: var(--primary-soft);
+  color: var(--primary-dark);
+}
+
+.admin-content {
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.admin-sidebar-footer {
+  margin-top: auto;
+  padding: 12px 10px;
+  border-top: 1px solid var(--outline);
+}
+
+.admin-sidebar-logout {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: none;
+  background: transparent;
+  color: var(--danger);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 120ms ease;
+}
+
+.admin-sidebar-logout:hover {
+  background: var(--error-container, #ffdad6);
+}
+
 .btn {
   min-height: 48px;
   display: inline-flex;
@@ -658,6 +775,13 @@ main {
   min-height: 62vh;
 }
 
+/* Product detail title — nhỏ hơn h1 global */
+.detail-content h1 {
+  font-size: clamp(1.25rem, 2.2vw, 1.75rem);
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+}
+
 .section-header {
   display: flex;
   align-items: end;
@@ -1140,6 +1264,36 @@ textarea:focus {
   font-weight: 700;
 }
 
+/* Email verify pages */
+.verify-pending-card {
+  text-align: center;
+  gap: 14px !important;
+}
+
+.verify-icon {
+  font-size: 3rem;
+  line-height: 1;
+}
+
+.verify-note {
+  background: var(--surface-muted);
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+  text-align: left;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+.verify-spin {
+  display: inline-block;
+  animation: spin 1.5s linear infinite;
+}
+
 .auth-error {
   padding: 11px 14px;
   border-radius: 8px;
@@ -1259,6 +1413,63 @@ textarea:focus {
 
 .pagination-bar {
   margin-top: 28px;
+}
+
+/* Numbered pagination */
+.pagination-numbered {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 32px;
+  flex-wrap: wrap;
+}
+
+.page-btn {
+  min-width: 38px;
+  height: 38px;
+  padding: 0 6px;
+  border: 1px solid var(--outline);
+  border-radius: 8px;
+  background: var(--surface-card);
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+
+.page-btn:hover:not(:disabled) {
+  background: var(--surface-strong);
+  color: var(--text);
+  border-color: var(--primary);
+}
+
+.page-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.page-btn--active {
+  background: var(--primary-dark);
+  border-color: var(--primary-dark);
+  color: #fff;
+}
+
+.page-btn--nav {
+  color: var(--text);
+}
+
+.page-dots {
+  min-width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  letter-spacing: 0.05em;
 }
 
 /* ── Orders ─────────────────────────────── */
@@ -2006,6 +2217,10 @@ textarea:focus {
 }
 
 @media (max-width: 1024px) {
+  .admin-sidebar {
+    width: 180px;
+  }
+
   .home-category-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }

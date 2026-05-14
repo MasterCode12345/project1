@@ -2,6 +2,7 @@ import { Search, X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import Button from '../components/common/Button.jsx';
+import Pagination from '../components/common/Pagination.jsx';
 import SectionHeader from '../components/common/SectionHeader.jsx';
 import ProductCard from '../components/product/ProductCard.jsx';
 import { productService } from '../services/productService.js';
@@ -195,24 +196,11 @@ export default function ProductListPage() {
                 <ProductCard key={product.id} product={product} />
               ))}
             </div>
-            <div className="pagination-bar">
-              <Button
-                type="button"
-                variant="secondary"
-                disabled={page <= 1}
-                onClick={() => setPage((currentPage) => Math.max(1, currentPage - 1))}
-              >
-                Trang trước
-              </Button>
-              <Button
-                type="button"
-                variant="secondary"
-                disabled={page >= totalPages}
-                onClick={() => setPage((currentPage) => Math.min(totalPages, currentPage + 1))}
-              >
-                Trang sau
-              </Button>
-            </div>
+            <Pagination
+              page={page}
+              totalPages={totalPages}
+              onPageChange={(p) => setPage(p)}
+            />
           </>
         )}
       </div>

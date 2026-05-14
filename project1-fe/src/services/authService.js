@@ -19,7 +19,35 @@ export const authService = {
     return result;
   },
 
-  logout() {
-    setAuthToken(null);
+  forgotPassword(email) {
+    return apiRequest('/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  },
+
+  resetPassword(token, newPassword) {
+    return apiRequest('/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ token, new_password: newPassword }),
+    });
+  },
+
+  // Xác minh email — BE trả về { token, user } để tự đăng nhập sau khi verify
+  async verifyEmail(token) {
+    const result = await apiRequest(`/auth/verify-email/${token}`);
+    setAuthToken(result.token);
+    return result;
+  },
+
+  async logout() {
+    try {
+      // Gọi BE để xác nhận logout (token hợp lệ trước khi xóa)
+      await apiRequest('/auth/logout', { method: 'POST' });
+    } catch {
+      // Dù BE có lỗi vẫn xóa token phía client
+    } finally {
+      setAuthToken(null);
+    }
   },
 };
