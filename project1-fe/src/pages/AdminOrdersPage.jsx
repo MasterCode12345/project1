@@ -46,6 +46,23 @@ const STATUS_FILTERS = [
   { value: 'cancelled', label: 'Đã hủy' },
 ];
 
+// Payment
+const PAYMENT_METHOD_LABEL = {
+  cod: 'COD',
+  bank_transfer: 'Chuyển khoản',
+  momo: 'MoMo',
+};
+
+const PAYMENT_STATUS_LABEL = {
+  unpaid: 'Chưa TT',
+  paid: 'Đã TT',
+};
+
+const PAYMENT_STATUS_MOD = {
+  unpaid: 'badge--warning',
+  paid: 'badge--success',
+};
+
 // Các trạng thái có thể chuyển sang (theo flow hợp lệ)
 const NEXT_STATUSES = {
   pending: ['confirmed', 'cancelled'],
@@ -269,9 +286,19 @@ export default function AdminOrdersPage() {
                         </span>
                         <span className="order-date">{formatDate(order.created_at)}</span>
                       </div>
-                      <span className={`order-status-badge ${STATUS_MOD[order.status] ?? 'badge--info'}`}>
-                        {STATUS_LABEL[order.status] ?? order.status}
-                      </span>
+                      <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+                        <span className={`order-status-badge ${STATUS_MOD[order.status] ?? 'badge--info'}`}>
+                          {STATUS_LABEL[order.status] ?? order.status}
+                        </span>
+                        {/* Payment status badge */}
+                        <span className={`order-status-badge ${PAYMENT_STATUS_MOD[order.payment_status] ?? 'badge--warning'}`}>
+                          {PAYMENT_STATUS_LABEL[order.payment_status] ?? order.payment_status}
+                        </span>
+                        {/* Payment method */}
+                        <span className="payment-method-tag">
+                          {PAYMENT_METHOD_LABEL[order.payment_method] ?? order.payment_method}
+                        </span>
+                      </div>
                     </div>
 
                     {/* Thông tin giao hàng */}
