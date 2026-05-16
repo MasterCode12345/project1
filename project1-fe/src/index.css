@@ -1974,6 +1974,81 @@ textarea:focus {
   background: rgba(16, 185, 129, 0.15);
 }
 
+/* Payment method selector (CartPage) */
+.payment-method-section {
+  margin-top: 8px;
+}
+
+.payment-method-label {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 10px;
+}
+
+.payment-method-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.payment-method-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1.5px solid var(--outline);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: border-color 140ms ease, background 140ms ease;
+  background: var(--surface-card);
+}
+
+.payment-method-option input[type="radio"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--primary-dark);
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.payment-method-option--active {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+}
+
+.payment-method-icon {
+  font-size: 1.3rem;
+  flex-shrink: 0;
+}
+
+.payment-method-option div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.payment-method-option strong {
+  font-size: 0.92rem;
+  color: var(--text);
+}
+
+.payment-method-option span {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+/* Payment method tag (AdminOrdersPage) */
+.payment-method-tag {
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  background: var(--surface-strong);
+  color: var(--text-muted);
+}
+
 /* Admin users */
 .user-name-cell {
   display: flex;

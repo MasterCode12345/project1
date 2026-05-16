@@ -45,6 +45,9 @@ export default function CartPage() {
   });
   const [shippingErrors, setShippingErrors] = useState({});
 
+  // Phương thức thanh toán
+  const [paymentMethod, setPaymentMethod] = useState('cod');
+
   const isLoggedIn = Boolean(getAuthToken());
   const totalQty = items.reduce((sum, item) => sum + item.quantity, 0);
   const subtotal = items.reduce((sum, item) => sum + item.unit_price * item.quantity, 0);
@@ -109,6 +112,7 @@ export default function CartPage() {
         shipping_phone: shipping.shipping_phone.trim(),
         shipping_address: shipping.shipping_address.trim(),
         shipping_note: shipping.shipping_note.trim(),
+        payment_method: paymentMethod,
         items: items.map((item) => ({
           product_id: item.product_id,
           quantity: item.quantity,
@@ -287,6 +291,28 @@ export default function CartPage() {
                     onChange={handleShippingChange}
                   />
                 </label>
+
+                {/* Phương thức thanh toán */}
+                <div className="payment-method-section">
+                  <p className="payment-method-label">Phương thức thanh toán</p>
+                  <div className="payment-method-list">
+                    <label className={`payment-method-option${paymentMethod === 'cod' ? ' payment-method-option--active' : ''}`}>
+                      <input
+                        type="radio"
+                        name="payment_method"
+                        value="cod"
+                        checked={paymentMethod === 'cod'}
+                        onChange={() => setPaymentMethod('cod')}
+                      />
+                      <span className="payment-method-icon">🚚</span>
+                      <div>
+                        <strong>Thanh toán khi nhận hàng (COD)</strong>
+                        <span>Kiểm tra hàng trước khi thanh toán</span>
+                      </div>
+                    </label>
+                    {/* Các phương thức khác sẽ thêm vào đây */}
+                  </div>
+                </div>
               </div>
             </div>
 
