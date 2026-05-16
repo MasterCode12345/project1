@@ -116,10 +116,15 @@ func (s *orderService) Create(ctx context.Context, userID bson.ObjectID, in mode
 		ShippingPhone:   strings.TrimSpace(in.ShippingPhone),
 		ShippingAddress: strings.TrimSpace(in.ShippingAddress),
 		ShippingNote:    notePtr,
-		TotalAmount:     total,
-		Status:          model.OrderStatusPending,
-		PaymentMethod:   model.PaymentMethodCOD,
-		PaymentStatus:   model.PaymentStatusUnpaid,
+		TotalAmount:   total,
+		Status:        model.OrderStatusPending,
+		PaymentMethod: func() string {
+			if in.PaymentMethod != "" {
+				return in.PaymentMethod
+			}
+			return model.PaymentMethodCOD
+		}(),
+		PaymentStatus: model.PaymentStatusUnpaid,
 		Items:           orderItems,
 	}
 	if err := s.orders.Create(ctx, order); err != nil {
