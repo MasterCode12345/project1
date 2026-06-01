@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import Button from '../components/common/Button.jsx';
 import SectionHeader from '../components/common/SectionHeader.jsx';
 import ProductCard from '../components/product/ProductCard.jsx';
+import { getAuthToken } from '../services/apiClient.js';
 import { productService } from '../services/productService.js';
 
 const currencyFormatter = new Intl.NumberFormat('vi-VN', {
@@ -147,6 +148,7 @@ function ProductCarousel({ products, isLoading }) {
 
 // ── Page ─────────────────────────────────────
 export default function HomePage() {
+  const isLoggedIn = Boolean(getAuthToken());
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [carouselProducts, setCarouselProducts] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -204,9 +206,11 @@ export default function HomePage() {
             <Button to="/products">
               Mua sắm ngay <ArrowRight size={18} />
             </Button>
-            <Button to="/register" variant="ghost">
-              Tạo tài khoản
-            </Button>
+            {!isLoggedIn && (
+              <Button to="/register" variant="ghost">
+                Tạo tài khoản
+              </Button>
+            )}
           </div>
 
           {/* Stats bar */}
@@ -310,12 +314,18 @@ export default function HomePage() {
       <section className="home-cta-section">
         <div className="container home-cta-inner">
           <h2 className="home-cta-title">Sẵn sàng cho học kỳ mới?</h2>
-          <p>Đăng ký ngay để nhận thông báo sản phẩm mới và ưu đãi dành riêng cho sinh viên.</p>
+          <p>
+            {isLoggedIn
+              ? 'Khám phá sản phẩm mới nhất và ưu đãi dành riêng cho sinh viên.'
+              : 'Đăng ký ngay để nhận thông báo sản phẩm mới và ưu đãi dành riêng cho sinh viên.'}
+          </p>
           <div className="home-hero-actions" style={{ marginTop: 24 }}>
-            <Button to="/register">
-              Tạo tài khoản miễn phí <ArrowRight size={18} />
-            </Button>
-            <Button to="/products" variant="secondary">
+            {!isLoggedIn && (
+              <Button to="/register">
+                Tạo tài khoản miễn phí <ArrowRight size={18} />
+              </Button>
+            )}
+            <Button to="/products" variant={isLoggedIn ? undefined : 'secondary'}>
               Xem sản phẩm
             </Button>
           </div>

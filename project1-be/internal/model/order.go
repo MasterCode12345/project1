@@ -18,6 +18,7 @@ const (
 	PaymentMethodCOD          = "cod"
 	PaymentMethodBankTransfer = "bank_transfer" // dự phòng mở rộng
 	PaymentMethodMomo         = "momo"          // dự phòng mở rộng
+	PaymentMethodVNPay        = "vnpay"
 
 	PaymentStatusUnpaid = "unpaid"
 	PaymentStatusPaid   = "paid"
@@ -61,7 +62,7 @@ type CreateOrderInput struct {
 	ShippingPhone   string                 `json:"shipping_phone"   binding:"required,min=8,max=20"`
 	ShippingAddress string                 `json:"shipping_address" binding:"required,min=5,max=2000"`
 	ShippingNote    string                 `json:"shipping_note"    binding:"omitempty,max=500"`
-	PaymentMethod   string                 `json:"payment_method"   binding:"omitempty,oneof=cod bank_transfer momo"`
+	PaymentMethod   string                 `json:"payment_method"   binding:"omitempty,oneof=cod bank_transfer momo vnpay"`
 	Items           []CreateOrderItemInput `json:"items"            binding:"required,min=1,dive"`
 }
 

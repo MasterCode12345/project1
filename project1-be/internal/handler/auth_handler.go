@@ -98,9 +98,32 @@ func (h *AuthHandler) ResetPassword(c *gin.Context) {
 	respond(c, http.StatusOK, gin.H{"message": "Đặt lại mật khẩu thành công. Vui lòng đăng nhập lại."})
 }
 
+// POST /api/v1/auth/refresh
+// Public endpoint: nhận refresh token, trả về access token mới + refresh token mới (rotation)
+func (h *AuthHandler) Refresh(c *gin.Context) {
+	var in model.RefreshTokenInput
+	if err := c.ShouldBindJSON(&in); err != nil {
+		respondError(c, apperror.Wrap(err, apperror.ErrInvalidInput.Code, "Refresh token không hợp lệ", http.StatusBadRequest))
+		return
+	}
+	res, err := h.auth.RefreshToken(c.Request.Context(), in.RefreshToken)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+	respond(c, http.StatusOK, res)
+}
+
 // POST /api/v1/auth/logout
-// JWT không có server-side session nên chỉ xác nhận token hợp lệ và trả 200.
-// Client tự xóa token sau khi nhận response này.
+// Thu hồi refresh token (nếu có) và xác nhận đăng xuất thành công.
+// Client luôn tự xóa token dù BE có lỗi hay không.
 func (h *AuthHandler) Logout(c *gin.Context) {
+	var in struct {
+		RefreshToken string `json:"refresh_token"`
+	}
+	_ = c.ShouldBindJSON(&in) // optional — không fail nếu body trống
+	if in.RefreshToken != "" {
+		_ = h.auth.RevokeRefreshToken(c.Request.Context(), in.RefreshToken)
+	}
 	respond(c, http.StatusOK, gin.H{"message": "Đăng xuất thành công"})
 }

@@ -27,8 +27,11 @@ type User struct {
 	// Đặt lại mật khẩu
 	ResetToken       string     `json:"-" bson:"reset_token,omitempty"`
 	ResetTokenExpiry *time.Time `json:"-" bson:"reset_token_expiry,omitempty"`
-	CreatedAt        time.Time  `json:"created_at" bson:"created_at"`
-	UpdatedAt        time.Time  `json:"updated_at" bson:"updated_at"`
+	// Refresh token (Remember Me)
+	RefreshToken       string     `json:"-" bson:"refresh_token,omitempty"`
+	RefreshTokenExpiry *time.Time `json:"-" bson:"refresh_token_expiry,omitempty"`
+	CreatedAt          time.Time  `json:"created_at" bson:"created_at"`
+	UpdatedAt          time.Time  `json:"updated_at" bson:"updated_at"`
 }
 
 type ForgotPasswordInput struct {
@@ -64,8 +67,13 @@ type ChangePasswordInput struct {
 }
 
 type AuthResponse struct {
-	Token string `json:"token"`
-	User  User   `json:"user"`
+	Token        string `json:"token"`
+	RefreshToken string `json:"refresh_token,omitempty"`
+	User         User   `json:"user"`
+}
+
+type RefreshTokenInput struct {
+	RefreshToken string `json:"refresh_token" binding:"required"`
 }
 
 // RegisterResponse trả về sau đăng ký — không có token vì cần xác minh email trước

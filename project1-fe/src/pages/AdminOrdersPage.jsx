@@ -51,6 +51,7 @@ const PAYMENT_METHOD_LABEL = {
   cod: 'COD',
   bank_transfer: 'Chuyển khoản',
   momo: 'MoMo',
+  vnpay: 'VNPay',
 };
 
 const PAYMENT_STATUS_LABEL = {
