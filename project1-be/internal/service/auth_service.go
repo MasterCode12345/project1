@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"go.mongodb.org/mongo-driver/v2/bson"
 	"golang.org/x/crypto/bcrypt"
 
 	"project1-be/internal/apperror"
@@ -19,8 +20,9 @@ import (
 )
 
 const (
-	verifyTokenTTL = 30 * time.Minute
-	resetTokenTTL  = 15 * time.Minute
+	verifyTokenTTL  = 30 * time.Minute
+	resetTokenTTL   = 15 * time.Minute
+	refreshTokenTTL = 7 * 24 * time.Hour // 7 ngày
 )
 
 type AuthService interface {
@@ -29,6 +31,9 @@ type AuthService interface {
 	VerifyEmail(ctx context.Context, token string) (*model.AuthResponse, error)
 	ForgotPassword(ctx context.Context, appURL string, in model.ForgotPasswordInput) error
 	ResetPassword(ctx context.Context, in model.ResetPasswordInput) error
+	// Refresh token
+	RefreshToken(ctx context.Context, refreshToken string) (*model.AuthResponse, error)
+	RevokeRefreshToken(ctx context.Context, refreshToken string) error
 }
 
 type authService struct {
@@ -117,7 +122,13 @@ func (s *authService) Login(ctx context.Context, in model.LoginInput) (*model.Au
 	if err != nil {
 		return nil, err
 	}
-	return &model.AuthResponse{Token: token, User: *u}, nil
+
+	refreshToken, err := s.generateAndStoreRefreshToken(ctx, u.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &model.AuthResponse{Token: token, RefreshToken: refreshToken, User: *u}, nil
 }
 
 // VerifyEmail xác minh token, kích hoạt tài khoản và trả về JWT để tự đăng nhập
@@ -136,7 +147,13 @@ func (s *authService) VerifyEmail(ctx context.Context, token string) (*model.Aut
 	if err != nil {
 		return nil, err
 	}
-	return &model.AuthResponse{Token: jwtToken, User: *u}, nil
+
+	refreshToken, err := s.generateAndStoreRefreshToken(ctx, u.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &model.AuthResponse{Token: jwtToken, RefreshToken: refreshToken, User: *u}, nil
 }
 
 // ForgotPassword tạo reset token và gửi email — không tiết lộ email có tồn tại không
@@ -181,6 +198,46 @@ func (s *authService) ResetPassword(ctx context.Context, in model.ResetPasswordI
 	}
 
 	return s.users.ResetPassword(ctx, u.ID, string(hash))
+}
+
+// RefreshToken kiểm tra refresh token, cấp access token mới + refresh token mới (rotation)
+func (s *authService) RefreshToken(ctx context.Context, refreshToken string) (*model.AuthResponse, error) {
+	u, err := s.users.FindByRefreshToken(ctx, refreshToken)
+	if err != nil {
+		return nil, err
+	}
+
+	newAccessToken, err := s.generateToken(u)
+	if err != nil {
+		return nil, err
+	}
+
+	// Token rotation: cấp refresh token mới, thu hồi token cũ
+	newRefreshToken, err := s.generateAndStoreRefreshToken(ctx, u.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &model.AuthResponse{Token: newAccessToken, RefreshToken: newRefreshToken, User: *u}, nil
+}
+
+// RevokeRefreshToken thu hồi refresh token (gọi khi logout)
+func (s *authService) RevokeRefreshToken(ctx context.Context, refreshToken string) error {
+	return s.users.RevokeRefreshToken(ctx, refreshToken)
+}
+
+// generateAndStoreRefreshToken tạo refresh token ngẫu nhiên và lưu vào DB
+func (s *authService) generateAndStoreRefreshToken(ctx context.Context, userID bson.ObjectID) (string, error) {
+	b := make([]byte, 32)
+	if _, err := rand.Read(b); err != nil {
+		return "", apperror.Wrap(err, "TOKEN_GEN_ERROR", "Không thể tạo refresh token", 500)
+	}
+	tokenStr := hex.EncodeToString(b)
+	expiry := time.Now().Add(refreshTokenTTL)
+	if err := s.users.StoreRefreshToken(ctx, userID, tokenStr, expiry); err != nil {
+		return "", err
+	}
+	return tokenStr, nil
 }
 
 func (s *authService) generateToken(u *model.User) (string, error) {

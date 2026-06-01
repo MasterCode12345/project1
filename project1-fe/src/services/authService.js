@@ -1,22 +1,31 @@
-import { apiRequest, setAuthToken } from './apiClient';
+import {
+  apiRequest,
+  getRefreshToken,
+  setAuthToken,
+  setRefreshToken,
+} from './apiClient';
 
 export const authService = {
-  async login(payload) {
+  // rememberMe=true → refresh token disimpan di localStorage (tồn tại qua các lần mở trình duyệt)
+  // rememberMe=false → sessionStorage (mất khi đóng tab)
+  async login(payload, rememberMe = false) {
     const result = await apiRequest('/auth/login', {
       method: 'POST',
       body: JSON.stringify(payload),
     });
     setAuthToken(result.token);
+    if (result.refresh_token) {
+      setRefreshToken(result.refresh_token, rememberMe);
+    }
     return result;
   },
 
   async register(payload) {
-    const result = await apiRequest('/auth/register', {
+    // BE trả về { message, email } — không có token (cần xác minh email trước)
+    return apiRequest('/auth/register', {
       method: 'POST',
       body: JSON.stringify(payload),
     });
-    setAuthToken(result.token);
-    return result;
   },
 
   forgotPassword(email) {
@@ -33,21 +42,30 @@ export const authService = {
     });
   },
 
-  // Xác minh email — BE trả về { token, user } để tự đăng nhập sau khi verify
+  // Xác minh email → BE trả về { token, refresh_token, user } → tự đăng nhập
   async verifyEmail(token) {
     const result = await apiRequest(`/auth/verify-email/${token}`);
     setAuthToken(result.token);
+    if (result.refresh_token) {
+      // Sau khi verify email: mặc định remember = true
+      setRefreshToken(result.refresh_token, true);
+    }
     return result;
   },
 
   async logout() {
+    const refreshToken = getRefreshToken();
     try {
-      // Gọi BE để xác nhận logout (token hợp lệ trước khi xóa)
-      await apiRequest('/auth/logout', { method: 'POST' });
+      // Gửi refresh token lên BE để thu hồi (revoke)
+      await apiRequest('/auth/logout', {
+        method: 'POST',
+        body: JSON.stringify({ refresh_token: refreshToken || '' }),
+      });
     } catch {
       // Dù BE có lỗi vẫn xóa token phía client
     } finally {
       setAuthToken(null);
+      setRefreshToken(null); // xóa ở cả localStorage lẫn sessionStorage
     }
   },
 };

@@ -5,6 +5,7 @@ import (
 	"net/smtp"
 
 	"project1-be/internal/config"
+	"project1-be/internal/model"
 )
 
 type EmailService interface {
@@ -109,7 +110,7 @@ func buildOrderConfirmationHTML(name string, o *OrderEmailData) string {
 		)
 	}
 
-	paymentLabel := "Thanh toán khi nhận hàng (COD)"
+	paymentLabel := paymentMethodLabel(o.PaymentMethod)
 
 	return fmt.Sprintf(`<!DOCTYPE html>
 <html lang="vi">
@@ -176,6 +177,21 @@ func buildOrderConfirmationHTML(name string, o *OrderEmailData) string {
 		o.ShippingAddress,
 		paymentLabel,
 	)
+}
+
+func paymentMethodLabel(method string) string {
+	switch method {
+	case model.PaymentMethodCOD, "":
+		return "Thanh toán khi nhận hàng (COD)"
+	case model.PaymentMethodVNPay:
+		return "Thanh toán qua VNPay"
+	case model.PaymentMethodBankTransfer:
+		return "Chuyển khoản ngân hàng"
+	case model.PaymentMethodMomo:
+		return "Ví MoMo"
+	default:
+		return method
+	}
 }
 
 func formatVND(amount float64) string {

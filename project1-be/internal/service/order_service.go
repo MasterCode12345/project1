@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"strings"
 	"time"
 
@@ -15,7 +16,6 @@ import (
 	"project1-be/internal/repository"
 )
 
-
 type OrderService interface {
 	Create(ctx context.Context, userID bson.ObjectID, in model.CreateOrderInput) (*model.Order, error)
 	GetMyOrders(ctx context.Context, userID bson.ObjectID, page, pageSize int, status *string) (*model.PageResult[model.Order], error)
@@ -24,6 +24,9 @@ type OrderService interface {
 
 	ListAll(ctx context.Context, page, pageSize int, status *string) (*model.PageResult[model.Order], error)
 	UpdateStatus(ctx context.Context, orderID bson.ObjectID, status string) (*model.Order, error)
+
+	// ConfirmVNPayPayment xác nhận thanh toán VNPay thành công, cập nhật payment_status + status
+	ConfirmVNPayPayment(ctx context.Context, orderCode string, paidAmount int64) (*model.Order, error)
 }
 
 type orderService struct {
@@ -116,8 +119,8 @@ func (s *orderService) Create(ctx context.Context, userID bson.ObjectID, in mode
 		ShippingPhone:   strings.TrimSpace(in.ShippingPhone),
 		ShippingAddress: strings.TrimSpace(in.ShippingAddress),
 		ShippingNote:    notePtr,
-		TotalAmount:   total,
-		Status:        model.OrderStatusPending,
+		TotalAmount:     total,
+		Status:          model.OrderStatusPending,
 		PaymentMethod: func() string {
 			if in.PaymentMethod != "" {
 				return in.PaymentMethod
@@ -125,7 +128,7 @@ func (s *orderService) Create(ctx context.Context, userID bson.ObjectID, in mode
 			return model.PaymentMethodCOD
 		}(),
 		PaymentStatus: model.PaymentStatusUnpaid,
-		Items:           orderItems,
+		Items:         orderItems,
 	}
 	if err := s.orders.Create(ctx, order); err != nil {
 		// Rollback toàn bộ stock nếu tạo đơn thất bại
@@ -289,6 +292,41 @@ func (s *orderService) UpdateStatus(ctx context.Context, orderID bson.ObjectID, 
 	return s.orders.FindByID(ctx, orderID)
 }
 
+// ConfirmVNPayPayment được gọi khi VNPay trả về responseCode=00 (thanh toán thành công).
+// Cập nhật payment_status=paid, đồng thời chuyển trạng thái pending→confirmed.
+func (s *orderService) ConfirmVNPayPayment(ctx context.Context, orderCode string, paidAmount int64) (*model.Order, error) {
+	o, err := s.orders.FindByOrderCode(ctx, orderCode)
+	if err != nil {
+		return nil, err
+	}
+
+	if o.PaymentMethod != model.PaymentMethodVNPay {
+		return nil, apperror.New("INVALID_PAYMENT_METHOD", "Đơn hàng không dùng phương thức thanh toán VNPay", 422)
+	}
+
+	expectedAmount := int64(math.Round(o.TotalAmount)) * 100
+	if paidAmount != expectedAmount {
+		return nil, apperror.New("VNPAY_AMOUNT_MISMATCH", "Số tiền thanh toán VNPay không khớp với đơn hàng", 409)
+	}
+
+	// Idempotent: nếu đã paid thì không cập nhật lại
+	if o.PaymentStatus == model.PaymentStatusPaid {
+		return o, nil
+	}
+
+	now := time.Now()
+	if err := s.orders.UpdatePaymentStatus(ctx, o.ID, model.PaymentStatusPaid, &now); err != nil {
+		return nil, err
+	}
+
+	// Chuyển trạng thái pending → confirmed (atomic, tránh race condition)
+	if o.Status == model.OrderStatusPending {
+		_, _ = s.orders.UpdateStatusConditional(ctx, o.ID, model.OrderStatusPending, model.OrderStatusConfirmed, nil, nil, nil)
+	}
+
+	return s.orders.FindByID(ctx, o.ID)
+}
+
 func validTransition(from, to string) bool {
 	allowed := map[string][]string{
 		model.OrderStatusPending:   {model.OrderStatusConfirmed, model.OrderStatusCancelled},
@@ -307,5 +345,5 @@ func validTransition(from, to string) bool {
 
 func generateOrderCode() string {
 	now := time.Now()
-	return fmt.Sprintf("ORD-%s-%06d", now.Format("20060102"), now.UnixNano()%1000000)
+	return fmt.Sprintf("ORD%s%06d", now.Format("20060102"), now.UnixNano()%1000000)
 }

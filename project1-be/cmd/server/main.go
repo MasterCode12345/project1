@@ -52,7 +52,7 @@ func main() {
 		Category:        handler.NewCategoryHandler(categorySvc),
 		ProductCustomer: handler.NewProductCustomerHandler(productSvc),
 		ProductAdmin:    handler.NewProductAdminHandler(productSvc),
-		Order:           handler.NewOrderHandler(orderSvc),
+		Order:           handler.NewOrderHandler(orderSvc, cfg),
 		Dashboard:       handler.NewDashboardHandler(dashboardSvc),
 		Upload:          handler.NewUploadHandler(uploadSvc),
 	}

@@ -10,8 +10,11 @@ export default function LoginPage() {
   const from = location.state?.from || '/';
 
   const [form, setForm] = useState({ email: '', password: '' });
+  const [rememberMe, setRememberMe] = useState(false);
   const [errors, setErrors] = useState({});
   const [serverError, setServerError] = useState('');
+  // Hiển thị thông báo khi bị đưa về đây do phiên hết hạn
+  const [sessionExpired] = useState(Boolean(location.state?.sessionExpired));
   const [isLoading, setIsLoading] = useState(false);
 
   function handleChange(e) {
@@ -40,10 +43,10 @@ export default function LoginPage() {
     setServerError('');
 
     try {
-      await authService.login({
-        email: form.email.trim(),
-        password: form.password,
-      });
+      await authService.login(
+        { email: form.email.trim(), password: form.password },
+        rememberMe,
+      );
       const role = getUserRole();
       navigate(role === 'admin' ? '/admin' : (from === '/login' ? '/' : from), { replace: true });
     } catch (err) {
@@ -63,6 +66,12 @@ export default function LoginPage() {
       <form className="auth-card" onSubmit={handleSubmit} noValidate>
         <p className="eyebrow">Tài khoản</p>
         <h1>Đăng nhập</h1>
+
+        {sessionExpired && !serverError && (
+          <p className="auth-notice">
+            Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.
+          </p>
+        )}
 
         {serverError && (
           <p className="auth-error">{serverError}</p>
@@ -94,10 +103,19 @@ export default function LoginPage() {
           {errors.password && <span className="field-error">{errors.password}</span>}
         </label>
 
-        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+        {/* Remember me + Forgot password trên cùng 1 dòng */}
+        <div className="login-meta-row">
+          <label className="remember-me-label">
+            <input
+              type="checkbox"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+            />
+            <span>Nhớ đăng nhập</span>
+          </label>
           <Link
             to="/forgot-password"
-            style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600 }}
+            className="forgot-link"
           >
             Quên mật khẩu?
           </Link>

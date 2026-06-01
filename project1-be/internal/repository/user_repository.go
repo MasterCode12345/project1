@@ -30,6 +30,10 @@ type UserRepository interface {
 	SetResetToken(ctx context.Context, id bson.ObjectID, token string, expiry time.Time) error
 	FindByResetToken(ctx context.Context, token string) (*model.User, error)
 	ResetPassword(ctx context.Context, id bson.ObjectID, passwordHash string) error
+	// Refresh token
+	StoreRefreshToken(ctx context.Context, id bson.ObjectID, token string, expiry time.Time) error
+	FindByRefreshToken(ctx context.Context, token string) (*model.User, error)
+	RevokeRefreshToken(ctx context.Context, token string) error
 }
 
 type userRepository struct {
@@ -265,6 +269,59 @@ func (r *userRepository) ResetPassword(ctx context.Context, id bson.ObjectID, pa
 	})
 	if err != nil {
 		return apperror.Wrap(err, "DB_ERROR", "Lỗi đặt lại mật khẩu", 500)
+	}
+	return nil
+}
+
+// StoreRefreshToken lưu refresh token vào user (ghi đè token cũ — 1 session tại một thời điểm)
+func (r *userRepository) StoreRefreshToken(ctx context.Context, id bson.ObjectID, token string, expiry time.Time) error {
+	_, err := r.col.UpdateByID(ctx, id, bson.M{
+		"$set": bson.M{
+			"refresh_token":        token,
+			"refresh_token_expiry": expiry,
+			"updated_at":           time.Now(),
+		},
+	})
+	if err != nil {
+		return apperror.Wrap(err, "DB_ERROR", "Lỗi lưu refresh token", 500)
+	}
+	return nil
+}
+
+// FindByRefreshToken tìm user theo refresh token còn hiệu lực
+func (r *userRepository) FindByRefreshToken(ctx context.Context, token string) (*model.User, error) {
+	var u model.User
+	err := r.col.FindOne(ctx, bson.M{
+		"refresh_token":        token,
+		"refresh_token_expiry": bson.M{"$gt": time.Now()},
+		"status":               model.UserStatusActive,
+	}).Decode(&u)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, apperror.ErrRefreshTokenInvalid
+		}
+		return nil, apperror.Wrap(err, "DB_ERROR", "Lỗi tìm refresh token", 500)
+	}
+	return &u, nil
+}
+
+// RevokeRefreshToken xóa refresh token khỏi user (dùng khi logout)
+func (r *userRepository) RevokeRefreshToken(ctx context.Context, token string) error {
+	if token == "" {
+		return nil
+	}
+	_, err := r.col.UpdateOne(ctx,
+		bson.M{"refresh_token": token},
+		bson.M{
+			"$unset": bson.M{
+				"refresh_token":        "",
+				"refresh_token_expiry": "",
+			},
+			"$set": bson.M{"updated_at": time.Now()},
+		},
+	)
+	if err != nil {
+		return apperror.Wrap(err, "DB_ERROR", "Lỗi thu hồi refresh token", 500)
 	}
 	return nil
 }

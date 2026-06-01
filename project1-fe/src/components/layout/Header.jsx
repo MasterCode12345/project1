@@ -1,4 +1,4 @@
-import { LogOut, Menu, Search, ShoppingCart, UserRound } from 'lucide-react';
+import { LogOut, Menu, Search, ShoppingCart, UserRound, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { getAuthToken, getUserRole } from '../../services/apiClient.js';
@@ -10,6 +10,7 @@ export default function Header() {
   const [cartCount, setCartCount] = useState(getCartCount);
   const [isLoggedIn, setIsLoggedIn] = useState(Boolean(getAuthToken()));
   const [role, setRole] = useState(getUserRole);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   // Cập nhật badge khi cart thay đổi
   useEffect(() => {
@@ -35,11 +36,20 @@ export default function Header() {
     };
   }, []);
 
+  // Khóa scroll nền khi drawer mở
+  useEffect(() => {
+    document.body.style.overflow = menuOpen ? 'hidden' : '';
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [menuOpen]);
+
   async function handleLogout() {
     await authService.logout(); // gọi POST /auth/logout → BE xác nhận → xóa token
     setIsLoggedIn(false);
     setRole(null);
     setCartCount(0);
+    setMenuOpen(false);
     window.dispatchEvent(new Event('cart-updated'));
     navigate('/');
   }
@@ -88,7 +98,7 @@ export default function Header() {
                 <UserRound size={20} />
               </NavLink>
               <button
-                className="icon-button"
+                className="icon-button logout-desktop"
                 type="button"
                 aria-label="Đăng xuất"
                 title="Đăng xuất"
@@ -103,11 +113,71 @@ export default function Header() {
             </NavLink>
           )}
 
-          <button className="icon-button mobile-menu" type="button" aria-label="Mở menu">
-            <Menu size={22} />
+          <button
+            className="icon-button mobile-menu"
+            type="button"
+            aria-label={menuOpen ? 'Đóng menu' : 'Mở menu'}
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen((v) => !v)}
+          >
+            {menuOpen ? <X size={22} /> : <Menu size={22} />}
           </button>
         </div>
       </div>
+
+      {/* Drawer điều hướng mobile */}
+      {menuOpen && (
+        <>
+          <button
+            className="mobile-nav-overlay"
+            type="button"
+            aria-label="Đóng menu"
+            onClick={() => setMenuOpen(false)}
+          />
+          <nav className="mobile-nav" aria-label="Điều hướng di động">
+            {navItems.map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                end={item.to === '/'}
+                className="mobile-nav-link"
+                onClick={() => setMenuOpen(false)}
+              >
+                {item.label}
+              </NavLink>
+            ))}
+
+            <div className="mobile-nav-divider" />
+
+            {isLoggedIn ? (
+              <>
+                <NavLink
+                  to="/profile"
+                  className="mobile-nav-link"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  Tài khoản
+                </NavLink>
+                <button
+                  type="button"
+                  className="mobile-nav-link mobile-nav-logout"
+                  onClick={handleLogout}
+                >
+                  <LogOut size={18} /> Đăng xuất
+                </button>
+              </>
+            ) : (
+              <NavLink
+                to="/login"
+                className="mobile-nav-link"
+                onClick={() => setMenuOpen(false)}
+              >
+                Đăng nhập
+              </NavLink>
+            )}
+          </nav>
+        </>
+      )}
     </header>
   );
 }

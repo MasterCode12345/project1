@@ -16,11 +16,14 @@ import (
 type OrderRepository interface {
 	Create(ctx context.Context, o *model.Order) error
 	FindByID(ctx context.Context, id bson.ObjectID) (*model.Order, error)
+	FindByOrderCode(ctx context.Context, orderCode string) (*model.Order, error)
 	List(ctx context.Context, f *model.OrderFilter) ([]model.Order, int64, error)
 	UpdateStatus(ctx context.Context, id bson.ObjectID, status string, paymentStatus *string, paidAt, cancelledAt *time.Time) error
 	// UpdateStatusConditional chỉ cập nhật nếu status hiện tại khớp với fromStatus.
 	// Trả về (matched=true) nếu update thành công, (matched=false) nếu status đã thay đổi.
 	UpdateStatusConditional(ctx context.Context, id bson.ObjectID, fromStatus, toStatus string, paymentStatus *string, paidAt, cancelledAt *time.Time) (bool, error)
+	// UpdatePaymentStatus cập nhật trạng thái thanh toán (dùng cho VNPay IPN/return)
+	UpdatePaymentStatus(ctx context.Context, id bson.ObjectID, paymentStatus string, paidAt *time.Time) error
 	CountToday(ctx context.Context) (int64, error)
 	CountTotal(ctx context.Context) (int64, error)
 }
@@ -157,6 +160,37 @@ func (r *orderRepository) UpdateStatusConditional(
 		return false, apperror.Wrap(err, "DB_ERROR", "Lỗi cập nhật trạng thái", 500)
 	}
 	return res.MatchedCount > 0, nil
+}
+
+func (r *orderRepository) FindByOrderCode(ctx context.Context, orderCode string) (*model.Order, error) {
+	var o model.Order
+	err := r.col.FindOne(ctx, bson.M{"order_code": orderCode}).Decode(&o)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, apperror.ErrOrderNotFound
+		}
+		return nil, apperror.Wrap(err, "DB_ERROR", "Lỗi truy vấn đơn hàng theo mã", 500)
+	}
+	return &o, nil
+}
+
+// UpdatePaymentStatus cập nhật payment_status và paid_at (dùng cho VNPay callback)
+func (r *orderRepository) UpdatePaymentStatus(ctx context.Context, id bson.ObjectID, paymentStatus string, paidAt *time.Time) error {
+	set := bson.M{
+		"payment_status": paymentStatus,
+		"updated_at":     time.Now(),
+	}
+	if paidAt != nil {
+		set["paid_at"] = *paidAt
+	}
+	res, err := r.col.UpdateByID(ctx, id, bson.M{"$set": set})
+	if err != nil {
+		return apperror.Wrap(err, "DB_ERROR", "Lỗi cập nhật trạng thái thanh toán", 500)
+	}
+	if res.MatchedCount == 0 {
+		return apperror.ErrOrderNotFound
+	}
+	return nil
 }
 
 func (r *orderRepository) CountToday(ctx context.Context) (int64, error) {

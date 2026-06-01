@@ -2,6 +2,7 @@ import { ShoppingCart, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Button from '../components/common/Button.jsx';
+import vnpayLogo from '../assets/vnpay-logo.svg';
 import { getAuthToken } from '../services/apiClient.js';
 import { cartService } from '../services/cartService.js';
 import { orderService } from '../services/orderService.js';
@@ -107,7 +108,7 @@ export default function CartPage() {
     setOrderError('');
 
     try {
-      await orderService.createOrder({
+      const result = await orderService.createOrder({
         shipping_name: shipping.shipping_name.trim(),
         shipping_phone: shipping.shipping_phone.trim(),
         shipping_address: shipping.shipping_address.trim(),
@@ -118,8 +119,17 @@ export default function CartPage() {
           quantity: item.quantity,
         })),
       });
+
+      // Luôn xóa giỏ hàng sau khi đặt thành công
       await cartService.clearCart();
       setItems([]);
+
+      // VNPay: chuyển hướng sang cổng thanh toán
+      if (result?.payment_url) {
+        window.location.href = result.payment_url;
+        return;
+      }
+
       setOrderSuccess(true);
     } catch (err) {
       setOrderError(err.message || 'Đặt hàng thất bại, vui lòng thử lại.');
@@ -310,7 +320,23 @@ export default function CartPage() {
                         <span>Kiểm tra hàng trước khi thanh toán</span>
                       </div>
                     </label>
-                    {/* Các phương thức khác sẽ thêm vào đây */}
+
+                    <label className={`payment-method-option${paymentMethod === 'vnpay' ? ' payment-method-option--active' : ''}`}>
+                      <input
+                        type="radio"
+                        name="payment_method"
+                        value="vnpay"
+                        checked={paymentMethod === 'vnpay'}
+                        onChange={() => setPaymentMethod('vnpay')}
+                      />
+                      <span className="payment-method-icon">
+                        <img className="vnpay-logo" src={vnpayLogo} alt="VNPay" />
+                      </span>
+                      <div>
+                        <strong>Thanh toán qua VNPay</strong>
+                        <span>ATM nội địa, Visa/Master, QR Code</span>
+                      </div>
+                    </label>
                   </div>
                 </div>
               </div>
@@ -341,11 +367,17 @@ export default function CartPage() {
                 disabled={isCheckingOut}
                 onClick={handleCheckout}
               >
-                <ShoppingCart size={18} />
+                {paymentMethod === 'vnpay' && isLoggedIn ? (
+                  <img className="vnpay-logo vnpay-logo--btn" src={vnpayLogo} alt="VNPay" />
+                ) : (
+                  <ShoppingCart size={18} />
+                )}
                 {isCheckingOut
                   ? 'Đang xử lý…'
                   : isLoggedIn
-                    ? 'Đặt hàng'
+                    ? paymentMethod === 'vnpay'
+                      ? 'Thanh toán qua VNPay'
+                      : 'Đặt hàng'
                     : 'Đăng nhập để đặt hàng'}
               </Button>
             </aside>

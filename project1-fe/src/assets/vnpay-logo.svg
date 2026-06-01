@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1190 960" role="img" aria-label="VNPay">
+  <title>VNPay</title>
+
+  <!-- Thẻ đỏ hình dấu tích (lớp dưới) -->
+  <path d="M340 520 L560 800 L1120 210"
+        fill="none" stroke="#E5202A" stroke-width="215"
+        stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Khe trắng tạo cảm giác hai thẻ xếp chồng -->
+  <path d="M616 629 L1036 186"
+        fill="none" stroke="#ffffff" stroke-width="18"
+        stroke-linecap="round"/>
+
+  <!-- Thẻ xanh (lớp trên) có viền trắng tách khỏi thẻ đỏ -->
+  <g transform="rotate(-12 370 370)">
+    <rect x="70" y="70" width="600" height="600" rx="95"
+          fill="#0860A8" stroke="#ffffff" stroke-width="22"/>
+  </g>
+
+  <!-- Vân tay (các cung đồng tâm) -->
+  <g fill="none" stroke="#2AA4E0" stroke-width="26" stroke-linecap="round">
+    <path d="M335 431 A70 70 0 1 0 405 431"/>
+    <path d="M310 474 A120 120 0 1 0 430 474"/>
+    <path d="M285 517 A170 170 0 1 0 455 517"/>
+    <path d="M258 565 A225 225 0 1 0 483 565"/>
+    <path d="M370 370 L370 470"/>
+  </g>
+</svg>

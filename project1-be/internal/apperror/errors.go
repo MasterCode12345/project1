@@ -88,4 +88,7 @@ var (
 
 	// Password reset
 	ErrResetTokenInvalid = New("RESET_TOKEN_INVALID", "Liên kết đặt lại mật khẩu không hợp lệ hoặc đã hết hạn.", http.StatusBadRequest)
+
+	// Refresh token
+	ErrRefreshTokenInvalid = New("REFRESH_TOKEN_INVALID", "Refresh token không hợp lệ hoặc đã hết hạn. Vui lòng đăng nhập lại.", http.StatusUnauthorized)
 )

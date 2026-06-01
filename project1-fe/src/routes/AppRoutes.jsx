@@ -18,6 +18,7 @@ import RegisterPage from '../pages/RegisterPage.jsx';
 import ForgotPasswordPage from '../pages/ForgotPasswordPage.jsx';
 import ResetPasswordPage from '../pages/ResetPasswordPage.jsx';
 import VerifyEmailPage from '../pages/VerifyEmailPage.jsx';
+import VNPayReturnPage from '../pages/VNPayReturnPage.jsx';
 import { getAuthToken } from '../services/apiClient.js';
 
 // Guard: yêu cầu đăng nhập
@@ -43,6 +44,7 @@ export default function AppRoutes() {
         <Route path="verify-email/:token" element={<VerifyEmailPage />} />
         <Route path="forgot-password" element={<ForgotPasswordPage />} />
         <Route path="reset-password/:token" element={<ResetPasswordPage />} />
+        <Route path="payment/vnpay/return" element={<VNPayReturnPage />} />
 
         {/* Protected — cần đăng nhập */}
         <Route path="profile" element={<RequireAuth><ProfilePage /></RequireAuth>} />
