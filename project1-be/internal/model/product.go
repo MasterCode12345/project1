@@ -29,6 +29,7 @@ type Product struct {
 	ID            bson.ObjectID      `json:"id" bson:"_id,omitempty"`
 	SKU           string             `json:"sku" bson:"sku"`
 	Name          string             `json:"name" bson:"name"`
+	Brand         string             `json:"brand,omitempty" bson:"brand,omitempty"`
 	Description   *string            `json:"description,omitempty" bson:"description,omitempty"`
 	Price         float64            `json:"price" bson:"price"`
 	ImageURL      *string            `json:"image_url,omitempty" bson:"image_url,omitempty"`
@@ -46,6 +47,7 @@ type Product struct {
 type CreateProductInput struct {
 	SKU           string  `json:"sku"            binding:"required,min=1,max=50"`
 	Name          string  `json:"name"           binding:"required,min=1,max=255"`
+	Brand         string  `json:"brand"          binding:"omitempty,max=100"`
 	Description   string  `json:"description"    binding:"omitempty,max=5000"`
 	Price         float64 `json:"price"          binding:"required,gte=0"`
 	ImageURL      string  `json:"image_url"      binding:"omitempty,max=500"`
@@ -56,6 +58,7 @@ type CreateProductInput struct {
 type UpdateProductInput struct {
 	SKU           *string  `json:"sku"            binding:"omitempty,min=1,max=50"`
 	Name          *string  `json:"name"           binding:"omitempty,min=1,max=255"`
+	Brand         *string  `json:"brand"          binding:"omitempty,max=100"`
 	Description   *string  `json:"description"    binding:"omitempty,max=5000"`
 	Price         *float64 `json:"price"          binding:"omitempty,gte=0"`
 	ImageURL      *string  `json:"image_url"      binding:"omitempty,max=500"`
@@ -82,6 +85,7 @@ type CreateProductHighlightInput struct {
 
 type ProductFilter struct {
 	CategoryID  *bson.ObjectID
+	Brand       *string
 	Query       string
 	MinPrice    *float64
 	MaxPrice    *float64

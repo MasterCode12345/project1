@@ -138,8 +138,20 @@ func (s *orderService) Create(ctx context.Context, userID bson.ObjectID, in mode
 		return nil, err
 	}
 
-	// Gửi email xác nhận đơn hàng (non-blocking)
-	go func(o *model.Order, uid bson.ObjectID) {
+	// Gửi email xác nhận đơn hàng:
+	// - COD: gửi ngay khi đặt hàng (đơn đã được xác nhận).
+	// - VNPay: KHÔNG gửi ở đây — chỉ gửi sau khi thanh toán thành công
+	//   (xem ConfirmVNPayPayment).
+	if order.PaymentMethod != model.PaymentMethodVNPay {
+		s.sendOrderConfirmationEmail(order, userID)
+	}
+
+	return order, nil
+}
+
+// sendOrderConfirmationEmail gửi email xác nhận đơn hàng (non-blocking).
+func (s *orderService) sendOrderConfirmationEmail(o *model.Order, uid bson.ObjectID) {
+	go func() {
 		u, err := s.users.FindByID(context.Background(), uid)
 		if err != nil {
 			return
@@ -162,9 +174,7 @@ func (s *orderService) Create(ctx context.Context, userID bson.ObjectID, in mode
 			TotalAmount:     o.TotalAmount,
 			PaymentMethod:   o.PaymentMethod,
 		})
-	}(order, userID)
-
-	return order, nil
+	}()
 }
 
 func (s *orderService) GetMyOrders(ctx context.Context, userID bson.ObjectID, page, pageSize int, status *string) (*model.PageResult[model.Order], error) {
@@ -323,6 +333,10 @@ func (s *orderService) ConfirmVNPayPayment(ctx context.Context, orderCode string
 	if o.Status == model.OrderStatusPending {
 		_, _ = s.orders.UpdateStatusConditional(ctx, o.ID, model.OrderStatusPending, model.OrderStatusConfirmed, nil, nil, nil)
 	}
+
+	// Thanh toán VNPay thành công → gửi email xác nhận đơn hàng.
+	// Nằm sau early-return idempotent ở trên nên chỉ gửi đúng một lần.
+	s.sendOrderConfirmationEmail(o, o.UserID)
 
 	return s.orders.FindByID(ctx, o.ID)
 }

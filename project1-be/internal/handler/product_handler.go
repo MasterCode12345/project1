@@ -2,6 +2,7 @@ package handler
 
 import (
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/v2/bson"
@@ -21,6 +22,9 @@ func buildProductFilter(c *gin.Context) model.ProductFilter {
 		if oid, err := bson.ObjectIDFromHex(v); err == nil {
 			f.CategoryID = &oid
 		}
+	}
+	if v := strings.TrimSpace(c.Query("brand")); v != "" {
+		f.Brand = &v
 	}
 	if v := c.Query("min_price"); v != "" {
 		if p, err := strconv.ParseFloat(v, 64); err == nil && p >= 0 {

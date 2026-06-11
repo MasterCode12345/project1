@@ -1,8 +1,9 @@
 import { Boxes, LayoutDashboard, LogOut, ShoppingBag, Tag, Users } from 'lucide-react';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { getAuthToken, getUserRole } from '../../services/apiClient.js';
 import { authService } from '../../services/authService.js';
+import ConfirmModal from '../common/ConfirmModal.jsx';
 
 const sidebarItems = [
   { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
@@ -14,6 +15,8 @@ const sidebarItems = [
 
 export default function AdminLayout() {
   const navigate = useNavigate();
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   // Guard: chỉ admin mới vào được
   useEffect(() => {
@@ -27,8 +30,14 @@ export default function AdminLayout() {
   }, [navigate]);
 
   async function handleLogout() {
-    await authService.logout();
-    navigate('/login', { replace: true });
+    setIsLoggingOut(true);
+    try {
+      await authService.logout();
+      setShowLogoutConfirm(false);
+      navigate('/login', { replace: true });
+    } finally {
+      setIsLoggingOut(false);
+    }
   }
 
   return (
@@ -63,7 +72,7 @@ export default function AdminLayout() {
           <button
             type="button"
             className="admin-sidebar-logout"
-            onClick={handleLogout}
+            onClick={() => setShowLogoutConfirm(true)}
           >
             <LogOut size={18} />
             <span>Đăng xuất</span>
@@ -75,6 +84,18 @@ export default function AdminLayout() {
       <div className="admin-content">
         <Outlet />
       </div>
+
+      <ConfirmModal
+        open={showLogoutConfirm}
+        title="Đăng xuất"
+        message="Bạn có chắc muốn đăng xuất khỏi trang quản trị không?"
+        confirmLabel="Đăng xuất"
+        cancelLabel="Ở lại"
+        danger
+        isBusy={isLoggingOut}
+        onConfirm={handleLogout}
+        onCancel={() => setShowLogoutConfirm(false)}
+      />
     </div>
   );
 }

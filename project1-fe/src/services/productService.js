@@ -25,6 +25,7 @@ function normalizeProduct(product = {}) {
     id: normalizeId(product.id || product._id),
     category_id: normalizeId(product.category_id),
     name: product.name || 'Sản phẩm chưa đặt tên',
+    brand: product.brand || '',
     category_name: product.category_name || 'Danh mục',
     price: Number(product.price || 0),
     image_url: primaryImage,
@@ -56,6 +57,22 @@ export const productService = {
 
   getCategories() {
     return apiRequest('/categories');
+  },
+
+  // Gợi ý danh sách hãng: lấy từ sản phẩm hiện có (distinct)
+  async getBrands() {
+    try {
+      const response = await apiRequest(`/products${buildQuery({ page: 1, page_size: 100 })}`);
+      const items = Array.isArray(response.items) ? response.items : [];
+      const set = new Set();
+      items.forEach((p) => {
+        const b = (p.brand || '').trim();
+        if (b) set.add(b);
+      });
+      return Array.from(set).sort((a, b) => a.localeCompare(b, 'vi'));
+    } catch {
+      return [];
+    }
   },
 
   getAdminProducts(params = {}) {

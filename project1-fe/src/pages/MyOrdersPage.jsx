@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import Button from '../components/common/Button.jsx';
 import { getAuthToken } from '../services/apiClient.js';
 import { orderService } from '../services/orderService.js';
+import { normalizeProductId, useProductImages } from '../utils/useProductImages.js';
 
 const currencyFormatter = new Intl.NumberFormat('vi-VN', {
   style: 'currency',
@@ -114,6 +116,10 @@ export default function MyOrdersPage() {
   const [reloadKey, setReloadKey] = useState(0);
 
   const totalPages = useMemo(() => Math.max(1, Math.ceil(total / PAGE_SIZE)), [total]);
+
+  // Gom tất cả item của các đơn để fetch ảnh sản phẩm theo product_id
+  const allItems = useMemo(() => orders.flatMap((o) => o.items || []), [orders]);
+  const productImages = useProductImages(allItems);
 
   useEffect(() => {
     if (!isLoggedIn) {
@@ -266,17 +272,33 @@ export default function MyOrdersPage() {
                   {/* Danh sách sản phẩm trong đơn */}
                   {order.items.length > 0 && (
                     <ul className="order-items-list">
-                      {order.items.map((item, idx) => (
-                        <li key={idx} className="order-item-row">
-                          <span className="order-item-name">
-                            {item.product_name || item.name || 'Sản phẩm'}
-                          </span>
-                          <span className="order-item-qty">x{item.quantity}</span>
-                          <span className="order-item-price">
-                            {currencyFormatter.format(item.unit_price ?? item.price ?? 0)}
-                          </span>
-                        </li>
-                      ))}
+                      {order.items.map((item, idx) => {
+                        const pid = normalizeProductId(item.product_id);
+                        const img = productImages[pid]?.image_url;
+                        const name = item.product_name || item.name || 'Sản phẩm';
+                        return (
+                          <li key={idx} className="order-item-row">
+                            <Link
+                              className="order-item-thumb"
+                              to={pid ? `/products/${pid}` : '#'}
+                              aria-label={name}
+                            >
+                              {img ? <img src={img} alt={name} /> : <span>{name.charAt(0)}</span>}
+                            </Link>
+                            {pid ? (
+                              <Link className="order-item-name order-item-name--link" to={`/products/${pid}`}>
+                                {name}
+                              </Link>
+                            ) : (
+                              <span className="order-item-name">{name}</span>
+                            )}
+                            <span className="order-item-qty">x{item.quantity}</span>
+                            <span className="order-item-price">
+                              {currencyFormatter.format(item.unit_price ?? item.price ?? 0)}
+                            </span>
+                          </li>
+                        );
+                      })}
                     </ul>
                   )}
 
