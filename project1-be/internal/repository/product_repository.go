@@ -107,6 +107,17 @@ func (r *productRepository) List(ctx context.Context, f *model.ProductFilter) ([
 	if f.CategoryID != nil {
 		filter["category_id"] = *f.CategoryID
 	}
+	if f.Brand != nil {
+		if b := strings.TrimSpace(*f.Brand); b != "" {
+			// Khớp theo field brand HOẶC tên sản phẩm, để vẫn lọc được
+			// cả khi sản phẩm chưa được nhập brand.
+			rx := bson.M{"$regex": b, "$options": "i"}
+			filter["$or"] = bson.A{
+				bson.M{"brand": rx},
+				bson.M{"name": rx},
+			}
+		}
+	}
 	if q := strings.TrimSpace(f.Query); q != "" {
 		filter["name"] = bson.M{"$regex": q, "$options": "i"}
 	}
@@ -162,6 +173,9 @@ func (r *productRepository) Update(ctx context.Context, id bson.ObjectID, in *mo
 	}
 	if in.Name != nil {
 		set["name"] = *in.Name
+	}
+	if in.Brand != nil {
+		set["brand"] = strings.TrimSpace(*in.Brand)
 	}
 	if in.Description != nil {
 		set["description"] = *in.Description

@@ -4,6 +4,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { getAuthToken, getUserRole } from '../../services/apiClient.js';
 import { authService } from '../../services/authService.js';
 import { getCartCount } from '../../services/cartService.js';
+import ConfirmModal from '../common/ConfirmModal.jsx';
 
 export default function Header() {
   const navigate = useNavigate();
@@ -11,6 +12,8 @@ export default function Header() {
   const [isLoggedIn, setIsLoggedIn] = useState(Boolean(getAuthToken()));
   const [role, setRole] = useState(getUserRole);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   // Cập nhật badge khi cart thay đổi
   useEffect(() => {
@@ -44,14 +47,25 @@ export default function Header() {
     };
   }, [menuOpen]);
 
-  async function handleLogout() {
-    await authService.logout(); // gọi POST /auth/logout → BE xác nhận → xóa token
-    setIsLoggedIn(false);
-    setRole(null);
-    setCartCount(0);
+  function requestLogout() {
     setMenuOpen(false);
-    window.dispatchEvent(new Event('cart-updated'));
-    navigate('/');
+    setShowLogoutConfirm(true);
+  }
+
+  async function handleLogout() {
+    setIsLoggingOut(true);
+    try {
+      await authService.logout(); // gọi POST /auth/logout → BE xác nhận → xóa token
+      setIsLoggedIn(false);
+      setRole(null);
+      setCartCount(0);
+      setMenuOpen(false);
+      window.dispatchEvent(new Event('cart-updated'));
+      setShowLogoutConfirm(false);
+      navigate('/');
+    } finally {
+      setIsLoggingOut(false);
+    }
   }
 
   // Nav items theo role
@@ -102,7 +116,7 @@ export default function Header() {
                 type="button"
                 aria-label="Đăng xuất"
                 title="Đăng xuất"
-                onClick={handleLogout}
+                onClick={requestLogout}
               >
                 <LogOut size={20} />
               </button>
@@ -161,7 +175,7 @@ export default function Header() {
                 <button
                   type="button"
                   className="mobile-nav-link mobile-nav-logout"
-                  onClick={handleLogout}
+                  onClick={requestLogout}
                 >
                   <LogOut size={18} /> Đăng xuất
                 </button>
@@ -178,6 +192,18 @@ export default function Header() {
           </nav>
         </>
       )}
+
+      <ConfirmModal
+        open={showLogoutConfirm}
+        title="Đăng xuất"
+        message="Bạn có chắc muốn đăng xuất khỏi tài khoản này không?"
+        confirmLabel="Đăng xuất"
+        cancelLabel="Ở lại"
+        danger
+        isBusy={isLoggingOut}
+        onConfirm={handleLogout}
+        onCancel={() => setShowLogoutConfirm(false)}
+      />
     </header>
   );
 }

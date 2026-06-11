@@ -73,6 +73,7 @@ func (s *productService) Create(ctx context.Context, in model.CreateProductInput
 	p := &model.Product{
 		SKU:           strings.TrimSpace(in.SKU),
 		Name:          strings.TrimSpace(in.Name),
+		Brand:         strings.TrimSpace(in.Brand),
 		Price:         in.Price,
 		CategoryID:    catID,
 		StockQuantity: in.StockQuantity,

@@ -2,6 +2,7 @@ import { ShoppingCart, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Button from '../components/common/Button.jsx';
+import AddressSelect from '../components/common/AddressSelect.jsx';
 import vnpayLogo from '../assets/vnpay-logo.svg';
 import { getAuthToken } from '../services/apiClient.js';
 import { cartService } from '../services/cartService.js';
@@ -41,8 +42,15 @@ export default function CartPage() {
   const [shipping, setShipping] = useState({
     shipping_name: '',
     shipping_phone: '',
-    shipping_address: '',
+    shipping_street: '', // Số nhà, tên đường
     shipping_note: '',
+  });
+  // Tỉnh/Thành phố + Phường/Xã chọn từ API
+  const [address, setAddress] = useState({
+    provinceCode: '',
+    provinceName: '',
+    wardCode: '',
+    wardName: '',
   });
   const [shippingErrors, setShippingErrors] = useState({});
 
@@ -78,6 +86,18 @@ export default function CartPage() {
     }
   }
 
+  function handleAddressChange(next) {
+    setAddress(next);
+    setShippingErrors((prev) => ({ ...prev, province: '', ward: '' }));
+  }
+
+  // Ghép địa chỉ đầy đủ: "Số nhà, đường, Phường/Xã, Tỉnh/Thành"
+  function buildFullAddress() {
+    return [shipping.shipping_street.trim(), address.wardName, address.provinceName]
+      .filter(Boolean)
+      .join(', ');
+  }
+
   function validateShipping() {
     const errors = {};
     if (!shipping.shipping_name.trim() || shipping.shipping_name.trim().length < 2) {
@@ -86,8 +106,14 @@ export default function CartPage() {
     if (!shipping.shipping_phone.trim() || shipping.shipping_phone.trim().length < 8) {
       errors.shipping_phone = 'Số điện thoại tối thiểu 8 ký tự';
     }
-    if (!shipping.shipping_address.trim() || shipping.shipping_address.trim().length < 5) {
-      errors.shipping_address = 'Địa chỉ tối thiểu 5 ký tự';
+    if (!address.provinceCode) {
+      errors.province = 'Vui lòng chọn tỉnh / thành phố';
+    }
+    if (!address.wardCode) {
+      errors.ward = 'Vui lòng chọn phường / xã';
+    }
+    if (!shipping.shipping_street.trim() || shipping.shipping_street.trim().length < 5) {
+      errors.shipping_street = 'Vui lòng nhập số nhà, tên đường (tối thiểu 5 ký tự)';
     }
     return errors;
   }
@@ -111,7 +137,7 @@ export default function CartPage() {
       const result = await orderService.createOrder({
         shipping_name: shipping.shipping_name.trim(),
         shipping_phone: shipping.shipping_phone.trim(),
-        shipping_address: shipping.shipping_address.trim(),
+        shipping_address: buildFullAddress(),
         shipping_note: shipping.shipping_note.trim(),
         payment_method: paymentMethod,
         items: items.map((item) => ({
@@ -277,17 +303,23 @@ export default function CartPage() {
                   )}
                 </label>
 
+                <AddressSelect
+                  value={address}
+                  onChange={handleAddressChange}
+                  errors={{ province: shippingErrors.province, ward: shippingErrors.ward }}
+                />
+
                 <label className="shipping-label">
-                  Địa chỉ nhận hàng <span className="required-mark">*</span>
+                  Số nhà, tên đường <span className="required-mark">*</span>
                   <input
                     type="text"
-                    name="shipping_address"
-                    value={shipping.shipping_address}
-                    placeholder="Số nhà, đường, phường/xã, quận/huyện, tỉnh/thành"
+                    name="shipping_street"
+                    value={shipping.shipping_street}
+                    placeholder="Ví dụ: 123 Lê Lợi"
                     onChange={handleShippingChange}
                   />
-                  {shippingErrors.shipping_address && (
-                    <span className="field-error">{shippingErrors.shipping_address}</span>
+                  {shippingErrors.shipping_street && (
+                    <span className="field-error">{shippingErrors.shipping_street}</span>
                   )}
                 </label>
 

@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import Button from '../components/common/Button.jsx';
 import { getAuthToken } from '../services/apiClient.js';
 import { orderService } from '../services/orderService.js';
+import { normalizeProductId, useProductImages } from '../utils/useProductImages.js';
 
 const currencyFormatter = new Intl.NumberFormat('vi-VN', {
   style: 'currency',
@@ -90,6 +91,8 @@ export default function OrderDetailPage() {
   const [isCancelling, setIsCancelling] = useState(false);
   const [cancelError, setCancelError] = useState('');
 
+  const productImages = useProductImages(order?.items || []);
+
   // Auth guard
   useEffect(() => {
     if (!getAuthToken()) navigate('/login', { replace: true });
@@ -175,20 +178,36 @@ export default function OrderDetailPage() {
                 {/* Items */}
                 {order.items.length > 0 && (
                   <ul className="order-items-list">
-                    {order.items.map((item, idx) => (
-                      <li key={idx} className="order-item-row order-item-row--detail">
-                        <span className="order-item-name">
-                          {item.product_name || 'Sản phẩm'}
-                        </span>
-                        <span className="order-item-qty">x{item.quantity}</span>
-                        <span className="order-item-price">
-                          {currencyFormatter.format(item.unit_price ?? 0)}
-                        </span>
-                        <span className="order-item-subtotal">
-                          {currencyFormatter.format(item.subtotal ?? item.unit_price * item.quantity ?? 0)}
-                        </span>
-                      </li>
-                    ))}
+                    {order.items.map((item, idx) => {
+                      const pid = normalizeProductId(item.product_id);
+                      const img = productImages[pid]?.image_url;
+                      const name = item.product_name || 'Sản phẩm';
+                      return (
+                        <li key={idx} className="order-item-row order-item-row--detail">
+                          <Link
+                            className="order-item-thumb"
+                            to={pid ? `/products/${pid}` : '#'}
+                            aria-label={name}
+                          >
+                            {img ? <img src={img} alt={name} /> : <span>{name.charAt(0)}</span>}
+                          </Link>
+                          {pid ? (
+                            <Link className="order-item-name order-item-name--link" to={`/products/${pid}`}>
+                              {name}
+                            </Link>
+                          ) : (
+                            <span className="order-item-name">{name}</span>
+                          )}
+                          <span className="order-item-qty">x{item.quantity}</span>
+                          <span className="order-item-price">
+                            {currencyFormatter.format(item.unit_price ?? 0)}
+                          </span>
+                          <span className="order-item-subtotal">
+                            {currencyFormatter.format(item.subtotal ?? item.unit_price * item.quantity ?? 0)}
+                          </span>
+                        </li>
+                      );
+                    })}
                   </ul>
                 )}
 

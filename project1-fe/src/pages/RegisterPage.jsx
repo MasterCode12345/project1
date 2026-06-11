@@ -6,7 +6,7 @@ import { authService } from '../services/authService.js';
 export default function RegisterPage() {
   const navigate = useNavigate();
 
-  const [form, setForm] = useState({ full_name: '', email: '', password: '', phone: '' });
+  const [form, setForm] = useState({ full_name: '', email: '', password: '', confirm_password: '', phone: '' });
   const [errors, setErrors] = useState({});
   const [serverError, setServerError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -24,6 +24,8 @@ export default function RegisterPage() {
     if (!form.full_name.trim() || form.full_name.trim().length < 2) errs.full_name = 'Họ tên tối thiểu 2 ký tự';
     if (!form.email.trim()) errs.email = 'Vui lòng nhập email';
     if (!form.password || form.password.length < 6) errs.password = 'Mật khẩu tối thiểu 6 ký tự';
+    if (!form.confirm_password) errs.confirm_password = 'Vui lòng nhập lại mật khẩu';
+    else if (form.confirm_password !== form.password) errs.confirm_password = 'Mật khẩu nhập lại không khớp';
     return errs;
   }
 
@@ -94,6 +96,11 @@ export default function RegisterPage() {
           Mật khẩu
           <input type="password" name="password" value={form.password} placeholder="Tối thiểu 6 ký tự" autoComplete="new-password" onChange={handleChange} />
           {errors.password && <span className="field-error">{errors.password}</span>}
+        </label>
+        <label>
+          Nhập lại mật khẩu
+          <input type="password" name="confirm_password" value={form.confirm_password} placeholder="Nhập lại mật khẩu" autoComplete="new-password" onChange={handleChange} />
+          {errors.confirm_password && <span className="field-error">{errors.confirm_password}</span>}
         </label>
         <label>
           Số điện thoại <span className="auth-optional">(tuỳ chọn)</span>

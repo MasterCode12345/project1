@@ -102,7 +102,8 @@ export default function ProductDetailPage() {
         {!isLoading && !error && product && (
           <div className="detail-grid">
             {/* Ảnh sản phẩm */}
-            <div className="detail-media">
+            <div className={`detail-media${outOfStock ? ' detail-media--soldout' : ''}`}>
+              {outOfStock && <span className="soldout-badge soldout-badge--lg">Sold out</span>}
               {product.image_url ? (
                 <img src={product.image_url} alt={product.name} />
               ) : (
@@ -123,8 +124,8 @@ export default function ProductDetailPage() {
                 {currencyFormatter.format(product.price)}
               </strong>
 
-              <p className="stock-text">
-                {outOfStock ? 'Hết hàng' : `Còn ${product.stock_quantity} sản phẩm`}
+              <p className={`stock-text${outOfStock ? ' stock-text--soldout' : ''}`}>
+                {outOfStock ? 'Sold out — Hết hàng' : `Còn ${product.stock_quantity} sản phẩm`}
               </p>
 
               {/* Chọn số lượng */}

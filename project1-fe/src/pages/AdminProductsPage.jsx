@@ -1,4 +1,4 @@
-import { Eye, EyeOff, Pencil, Plus, Search, Trash2, UploadCloud } from 'lucide-react';
+import { Pencil, Plus, Power, PowerOff, Search, Trash2, UploadCloud } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Button from '../components/common/Button.jsx';
@@ -16,6 +16,7 @@ const PAGE_SIZE = 15;
 const EMPTY_FORM = {
   sku: '',
   name: '',
+  brand: '',
   description: '',
   price: '',
   image_url: '',
@@ -151,6 +152,7 @@ export default function AdminProductsPage() {
     setForm({
       sku: product.sku || '',
       name: product.name || '',
+      brand: product.brand || '',
       description: product.description || '',
       price: String(product.price || ''),
       image_url: product.image_url || '',
@@ -210,6 +212,7 @@ export default function AdminProductsPage() {
     const payload = {
       sku: form.sku.trim(),
       name: form.name.trim(),
+      brand: form.brand.trim(),
       description: form.description.trim(),
       price: Number(form.price),
       image_url: form.image_url.trim(),
@@ -272,6 +275,10 @@ export default function AdminProductsPage() {
                     Tên sản phẩm <span className="required-mark">*</span>
                     <input type="text" name="name" value={form.name} placeholder="iPhone 15 Pro Max 256GB" onChange={handleFormChange} />
                     {formErrors.name && <span className="field-error">{formErrors.name}</span>}
+                  </label>
+                  <label>
+                    Hãng
+                    <input type="text" name="brand" value={form.brand} placeholder="Apple, Samsung, Dell..." onChange={handleFormChange} />
                   </label>
                   <label>
                     Mô tả
@@ -422,7 +429,7 @@ export default function AdminProductsPage() {
                     <th>Danh mục</th>
                     <th>Giá</th>
                     <th>Tồn kho</th>
-                    <th>Hiển thị</th>
+                    <th>Trạng thái</th>
                     <th></th>
                   </tr>
                 </thead>
@@ -443,20 +450,34 @@ export default function AdminProductsPage() {
                           <td>{product.category_name}</td>
                           <td className="admin-price">{currencyFormatter.format(product.price)}</td>
                           <td className={product.stock_quantity <= 5 ? 'admin-stock--low' : ''}>
-                            {product.stock_quantity}
+                            {product.stock_quantity === 0 ? (
+                              <span className="badge-soldout">Hết hàng</span>
+                            ) : (
+                              product.stock_quantity
+                            )}
                           </td>
                           <td>
-                            <button
-                              className="admin-visibility-btn"
-                              type="button"
-                              title={product.is_visible ? 'Đang hiển thị' : 'Đang ẩn'}
-                              disabled={togglingId === product.id}
-                              onClick={() => handleToggleVisibility(product)}
-                            >
-                              {product.is_visible
-                                ? <Eye size={18} color="var(--primary-dark)" />
-                                : <EyeOff size={18} color="var(--text-muted)" />}
-                            </button>
+                            <div className="admin-status-cell">
+                              <span
+                                className={`status-badge ${product.is_visible ? 'status-badge--active' : 'status-badge--inactive'}`}
+                              >
+                                {product.is_visible ? 'Đang bán' : 'Ngừng bán'}
+                              </span>
+                              <button
+                                className={`admin-toggle-btn ${product.is_visible ? 'admin-toggle-btn--off' : 'admin-toggle-btn--on'}`}
+                                type="button"
+                                title={product.is_visible ? 'Ngừng bán sản phẩm' : 'Kích hoạt bán lại'}
+                                disabled={togglingId === product.id}
+                                onClick={() => handleToggleVisibility(product)}
+                              >
+                                {product.is_visible ? <PowerOff size={14} /> : <Power size={14} />}
+                                {togglingId === product.id
+                                  ? '...'
+                                  : product.is_visible
+                                    ? 'Deactivate'
+                                    : 'Activate'}
+                              </button>
+                            </div>
                           </td>
                           <td>
                             <div className="admin-row-actions">
